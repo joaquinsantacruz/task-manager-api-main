@@ -6,7 +6,6 @@ from src.db.session import AsyncSessionLocal
 from src.models.user import User, UserRole
 from src.core.security import get_password_hash
 
-# Configuración básica de logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -14,8 +13,10 @@ async def create_first_user():
     logger.info("Creando usuario inicial")
     
     async with AsyncSessionLocal() as session:
-        result = await session.execute(select(User).where(User.email == "admin@admin.com"))
-        user = result.scalar_one_or_none()
+        result = await session.scalars(
+            select(User).where(User.email == "admin@admin.com")
+        )
+        user = result.one_or_none()
         
         if user:
             logger.info("User 'admin@admin.com' ya existe. Saltando creación.")

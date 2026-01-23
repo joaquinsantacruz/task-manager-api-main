@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
-from src.api.v1.endpoints import login
+from src.api.v1.endpoints import login, tasks
 
 app = FastAPI(
     title="Task Manager API",
@@ -27,6 +27,7 @@ app.add_middleware(
 # - Health check endpoint
 
 app.include_router(login.router, prefix=settings.API_V1_STR, tags=["login"])
+app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}/tasks", tags=["tasks"])
 
 @app.get("/")
 async def root():

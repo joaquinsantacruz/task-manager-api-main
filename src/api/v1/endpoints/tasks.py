@@ -8,6 +8,7 @@ from src.models.user import User
 from src.models.task import Task
 from src.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 from src.repositories.task import TaskRepository
+from src.services.task import TaskService
 
 router = APIRouter()
 
@@ -17,14 +18,18 @@ async def read_tasks(
     current_user: Annotated[User, Depends(deps.get_current_user)],
     skip: int = 0,
     limit: int = 100,
+    only_mine: bool = False,
 ) -> List[Task]:
     """
     Recuperar tareas propias.
     """
-    tasks = await TaskRepository.get_multi_by_owner(
-        db=db, owner_id=current_user.id, skip=skip, limit=limit
+    return await TaskService.get_tasks_for_user(
+        db=db,
+        user=current_user,
+        skip=skip,
+        limit=limit,
+        only_mine=only_mine
     )
-    return tasks
 
 @router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
@@ -69,11 +74,7 @@ async def update_task(
     """
     Actualizar una tarea propia.
     """
-    task = await TaskRepository.get_by_id_and_owner(
-        db=db, id=task_id, owner_id=current_user.id
-    )
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    task = await TaskService.get_task_for_action(db, task_id, current_user)
     
     task = await TaskRepository.update(db=db, db_obj=task, obj_in=task_in)
     return task
@@ -88,10 +89,6 @@ async def delete_task(
     """
     Eliminar una tarea propia.
     """
-    task = await TaskRepository.get_by_id_and_owner(
-        db=db, id=task_id, owner_id=current_user.id
-    )
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    task = await TaskService.get_task_for_action(db, task_id, current_user)
     
     await TaskRepository.delete(db=db, db_obj=task)

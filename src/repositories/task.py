@@ -8,7 +8,18 @@ from src.schemas.task import TaskCreate, TaskUpdate
 class TaskRepository:
     
     @staticmethod
-    async def create(db: AsyncSession, obj_in: TaskCreate, owner_id: int) -> Task:
+    async def get_by_id(
+        db: AsyncSession, id: int
+    ) -> Optional[Task]:
+        """Busca una tarea solo por su ID (owner use)."""
+        query = select(Task).where(Task.id == id)
+        result = await db.scalars(query)
+        return result.one_or_none()
+
+    @staticmethod
+    async def create(
+        db: AsyncSession, obj_in: TaskCreate, owner_id: int
+    ) -> Task:
         """Crea una tarea asignada al usuario actual."""
         db_obj = Task(
             **obj_in.model_dump(),
@@ -18,6 +29,15 @@ class TaskRepository:
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
+
+    @staticmethod
+    async def get_all(
+        db: AsyncSession, skip: int = 0, limit: int = 100
+    ) -> List[Task]:
+        """Devuelve todas las tareas (owner use)."""
+        query = select(Task).offset(skip).limit(limit)
+        result = await db.scalars(query)
+        return list(result.all())
 
     @staticmethod
     async def get_multi_by_owner(

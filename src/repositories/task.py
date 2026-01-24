@@ -1,7 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
 from src.models.task import Task
 from src.schemas.task import TaskCreate, TaskUpdate
@@ -14,7 +14,7 @@ class TaskRepository:
         db: AsyncSession, id: int
     ) -> Optional[Task]:
         """Find a task by its ID (for owner use)."""
-        query = select(Task).options(selectinload(Task.owner)).where(Task.id == id)
+        query = select(Task).options(joinedload(Task.owner)).where(Task.id == id)
         result = await db.scalars(query)
         return result.one_or_none()
 
@@ -31,16 +31,21 @@ class TaskRepository:
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
-        # Load the owner relationship
-        await db.refresh(db_obj, ["owner"])
-        return db_obj
+        
+        # Load the owner relationship explicitly
+        result = await db.scalars(
+            select(Task)
+            .options(joinedload(Task.owner))
+            .where(Task.id == db_obj.id)
+        )
+        return result.one()
 
     @staticmethod
     async def get_all(
         db: AsyncSession, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Task]:
         """Return all tasks (for owner use)."""
-        query = select(Task).options(selectinload(Task.owner)).offset(skip).limit(limit)
+        query = select(Task).options(joinedload(Task.owner)).offset(skip).limit(limit)
         result = await db.scalars(query)
         return list(result.all())
 
@@ -49,7 +54,7 @@ class TaskRepository:
         db: AsyncSession, owner_id: int, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Task]:
         """Return only the tasks of the logged-in user."""
-        query = select(Task).options(selectinload(Task.owner)).where(Task.owner_id == owner_id).offset(skip).limit(limit)
+        query = select(Task).options(joinedload(Task.owner)).where(Task.owner_id == owner_id).offset(skip).limit(limit)
         result = await db.scalars(query)
         return list(result.all())
 
@@ -58,7 +63,7 @@ class TaskRepository:
         db: AsyncSession, id: int, owner_id: int
     ) -> Optional[Task]:
         """Find a specific task, ensuring it belongs to the user."""
-        query = select(Task).options(selectinload(Task.owner)).where(Task.id == id, Task.owner_id == owner_id)
+        query = select(Task).options(joinedload(Task.owner)).where(Task.id == id, Task.owner_id == owner_id)
         result = await db.scalars(query)
         return result.one_or_none()
 
@@ -74,8 +79,14 @@ class TaskRepository:
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
-        # Load the owner relationship
-        await db.refresh(db_obj, ["owner"])
+        
+        # Load the owner relationship explicitly
+        result = await db.scalars(
+            select(Task)
+            .options(joinedload(Task.owner))
+            .where(Task.id == db_obj.id)
+        )
+        return result.one()
         return db_obj
 
     @staticmethod

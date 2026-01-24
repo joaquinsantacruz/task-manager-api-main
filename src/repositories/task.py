@@ -22,8 +22,9 @@ class TaskRepository:
         db: AsyncSession, obj_in: TaskCreate, owner_id: int
     ) -> Task:
         """Crea una tarea asignada al usuario actual."""
+        task_data = obj_in.model_dump(exclude_unset=False)
         db_obj = Task(
-            **obj_in.model_dump(),
+            **task_data,
             owner_id=owner_id
         )
         db.add(db_obj)

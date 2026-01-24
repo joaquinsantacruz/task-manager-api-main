@@ -77,15 +77,14 @@ class TaskResponse(TaskBase):
     @model_validator(mode='before')
     @classmethod
     def extract_owner_email(cls, data: Any) -> Any:
-        """Extrae el email del owner desde la relación cargada."""
-        # Si data es un objeto SQLAlchemy (tiene atributos)
+        """Extracts the owner's email from the loaded relationship."""
+
         if hasattr(data, 'owner') and data.owner and hasattr(data.owner, 'email'):
-            # Si es un dict, actualizamos
+           
             if isinstance(data, dict):
                 data['owner_email'] = data.owner.email
-            # Si es un objeto, creamos un dict con los valores
+           
             else:
-                # Convertir el objeto SQLAlchemy a dict
                 result = {
                     'id': data.id,
                     'title': data.title,

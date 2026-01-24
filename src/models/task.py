@@ -19,14 +19,14 @@ class Task(Base):
     status = Column(SqEnum(TaskStatus), default=TaskStatus.TODO, nullable=False)
     due_date = Column(DateTime(timezone=True), nullable=True)
     
-    # Clave Foránea
+    # Foreign Key
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
-    # Auditoría
+    # Audit
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relación Inversa
+    # Inverse Relationship
     owner = relationship("src.models.user.User", back_populates="tasks")
     comments = relationship("src.models.comment.Comment", back_populates="task", cascade="all, delete-orphan")
     notifications = relationship("src.models.notification.Notification", back_populates="task", cascade="all, delete-orphan")

@@ -24,7 +24,7 @@ class NotificationService:
         limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Notification]:
         """
-        Obtiene las notificaciones de un usuario.
+        Gets notifications for a user.
         """
         return await NotificationRepository.get_user_notifications(
             db=db,
@@ -40,7 +40,7 @@ class NotificationService:
         current_user: User
     ) -> int:
         """
-        Cuenta las notificaciones no leídas de un usuario.
+        Counts unread notifications for a user.
         """
         return await NotificationRepository.count_unread(db, current_user.id)
     
@@ -93,13 +93,13 @@ class NotificationService:
     @staticmethod
     async def generate_due_date_notifications(db: AsyncSession) -> dict:
         """
-        Genera notificaciones para tareas con fechas de vencimiento próximas o vencidas.
-        Esta función debe ser llamada periódicamente (ej: cada hora o mediante un endpoint manual).
+        Generates notifications for tasks with approaching or overdue due dates.
+        This function should be called periodically (e.g., every hour or via a manual endpoint).
         
-        Lógica:
-        - Tareas que vencen hoy → notificación "due_today"
-        - Tareas que vencen en las próximas 24 horas → notificación "due_soon"
-        - Tareas vencidas y no completadas → notificación "overdue"
+        Logic:
+        - Tasks due today → "due_today" notification
+        - Tasks due in the next 24 hours → "due_soon" notification
+        - Overdue and incomplete tasks → "overdue" notification
         """
         now = datetime.now(timezone.utc)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -111,7 +111,7 @@ class NotificationService:
             "overdue": 0
         }
         
-        # Obtener todas las tareas con due_date que no están completadas
+        # Get all tasks with due_date that are not completed
         result = await db.scalars(
             select(Task)
             .options(joinedload(Task.owner))
@@ -126,9 +126,9 @@ class NotificationService:
             if task_due_date.tzinfo is None:
                 task_due_date = task_due_date.replace(tzinfo=timezone.utc)
             
-            # Tarea vencida
+            # Overdue task
             if task_due_date < now:
-                # Verificar si ya existe una notificación de overdue
+                # Check if an overdue notification already exists
                 exists = await NotificationRepository.exists_for_task_and_type(
                     db, task.id, NotificationType.OVERDUE
                 )
@@ -138,11 +138,11 @@ class NotificationService:
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.OVERDUE,
-                        message=f"La tarea '{task.title}' está vencida"
+                        message=f"Task '{task.title}' is overdue"
                     )
                     notifications_created["overdue"] += 1
             
-            # Tarea vence hoy
+            # Task due today
             elif now <= task_due_date <= today_end:
                 exists = await NotificationRepository.exists_for_task_and_type(
                     db, task.id, NotificationType.DUE_TODAY
@@ -153,11 +153,11 @@ class NotificationService:
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.DUE_TODAY,
-                        message=f"La tarea '{task.title}' vence hoy"
+                        message=f"Task '{task.title}' is due today"
                     )
                     notifications_created["due_today"] += 1
             
-            # Tarea vence en las próximas 24 horas
+            # Task due in the next 24 hours
             elif today_end < task_due_date <= tomorrow_end:
                 exists = await NotificationRepository.exists_for_task_and_type(
                     db, task.id, NotificationType.DUE_SOON
@@ -168,7 +168,7 @@ class NotificationService:
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.DUE_SOON,
-                        message=f"La tarea '{task.title}' vence pronto"
+                        message=f"Task '{task.title}' is due soon"
                     )
                     notifications_created["due_soon"] += 1
         

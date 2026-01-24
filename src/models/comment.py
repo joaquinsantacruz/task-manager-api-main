@@ -10,15 +10,15 @@ class Comment(Base):
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
     
-    # Claves Foráneas
+    # Foreign Keys
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
-    # Auditoría
+    # Audit
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relaciones
+    # Relationships
     task = relationship("src.models.task.Task", back_populates="comments")
     author = relationship("src.models.user.User", back_populates="comments")
 

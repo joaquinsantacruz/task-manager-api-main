@@ -16,7 +16,7 @@ class UserCreate(UserBase):
     )
 
 class UserCreateByOwner(BaseModel):
-    """Schema para que un owner cree nuevos usuarios"""
+    """Schema for an owner to create new users"""
     email: EmailStr
     password: str = Field(
         min_length=USER_PASSWORD_MIN_LENGTH,

@@ -6,9 +6,9 @@ from src.db.base import Base
 
 
 class NotificationType(str, enum.Enum):
-    DUE_SOON = "due_soon"      # Tarea vence en las próximas 24 horas
-    OVERDUE = "overdue"        # Tarea vencida
-    DUE_TODAY = "due_today"    # Tarea vence hoy
+    DUE_SOON = "due_soon"      # Task due in the next 24 hours
+    OVERDUE = "overdue"        # Overdue task
+    DUE_TODAY = "due_today"    # Task due today
 
 
 class Notification(Base):
@@ -19,14 +19,14 @@ class Notification(Base):
     notification_type = Column(SqEnum(NotificationType), nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
     
-    # Claves Foráneas
+    # Foreign Keys
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
     
-    # Auditoría
+    # Audit
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relaciones
+    # Relationships
     user = relationship("src.models.user.User", back_populates="notifications")
     task = relationship("src.models.task.Task", back_populates="notifications")
 

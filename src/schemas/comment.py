@@ -13,12 +13,12 @@ class CommentBase(BaseModel):
 
 
 class CommentCreate(CommentBase):
-    """Schema para crear un comentario en una tarea."""
+    """Schema for creating a comment on a task."""
     pass
 
 
 class CommentUpdate(BaseModel):
-    """Schema para actualizar un comentario."""
+    """Schema for updating a comment."""
     content: str = Field(
         min_length=COMMENT_CONTENT_MIN_LENGTH,
         max_length=COMMENT_CONTENT_MAX_LENGTH,
@@ -27,7 +27,7 @@ class CommentUpdate(BaseModel):
 
 
 class CommentResponse(CommentBase):
-    """Schema para la respuesta de un comentario."""
+    """Schema for comment response."""
     id: int
     task_id: int
     author_id: int

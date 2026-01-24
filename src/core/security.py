@@ -8,7 +8,7 @@ from src.core.config import settings
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def create_access_token(subject: Union[str, Any], expires_delta: timedelta = None) -> str:
-    """Genera un JWT firmado."""
+    """Generates a signed JWT."""
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
@@ -24,9 +24,9 @@ def create_access_token(subject: Union[str, Any], expires_delta: timedelta = Non
     return encoded_jwt
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Compara una contraseña plana con su hash."""
+    """Compares a plain password with its hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password: str) -> str:
-    """Genera el hash seguro de una contraseña."""
+    """Generates a secure hash of a password."""
     return pwd_context.hash(password)

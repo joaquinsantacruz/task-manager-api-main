@@ -11,7 +11,7 @@ class NotificationRepository:
     
     @staticmethod
     async def get_by_id(db: AsyncSession, notification_id: int) -> Optional[Notification]:
-        """Obtiene una notificación por su ID, incluyendo task."""
+        """Gets a notification by its ID, including the task."""
         result = await db.scalars(
             select(Notification)
             .options(joinedload(Notification.task))
@@ -27,7 +27,7 @@ class NotificationRepository:
         skip: int = 0, 
         limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Notification]:
-        """Obtiene las notificaciones de un usuario."""
+        """Gets notifications for a user."""
         query = (
             select(Notification)
             .options(joinedload(Notification.task))
@@ -44,7 +44,7 @@ class NotificationRepository:
     
     @staticmethod
     async def count_unread(db: AsyncSession, user_id: int) -> int:
-        """Cuenta las notificaciones no leídas de un usuario."""
+        """Counts unread notifications for a user."""
         result = await db.execute(
             select(func.count(Notification.id))
             .where(Notification.user_id == user_id)
@@ -60,7 +60,7 @@ class NotificationRepository:
         notification_type: str,
         message: str
     ) -> Notification:
-        """Crea una nueva notificación."""
+        """Creates a new notification."""
         db_notification = Notification(
             user_id=user_id,
             task_id=task_id,
@@ -72,7 +72,7 @@ class NotificationRepository:
         await db.commit()
         await db.refresh(db_notification)
         
-        # Cargar la relación del task
+        # Load the task relationship
         result = await db.scalars(
             select(Notification)
             .options(joinedload(Notification.task))
@@ -82,7 +82,7 @@ class NotificationRepository:
     
     @staticmethod
     async def mark_as_read(db: AsyncSession, notification: Notification) -> Notification:
-        """Marca una notificación como leída."""
+        """Marks a notification as read."""
         notification.is_read = True
         await db.commit()
         await db.refresh(notification)
@@ -90,7 +90,7 @@ class NotificationRepository:
     
     @staticmethod
     async def delete(db: AsyncSession, notification: Notification) -> None:
-        """Elimina una notificación."""
+        """Deletes a notification."""
         await db.delete(notification)
         await db.commit()
     
@@ -100,7 +100,7 @@ class NotificationRepository:
         task_id: int,
         notification_type: str
     ) -> bool:
-        """Verifica si ya existe una notificación del tipo especificado para la tarea."""
+        """Checks if a notification of the specified type already exists for the task."""
         result = await db.execute(
             select(func.count(Notification.id))
             .where(Notification.task_id == task_id)

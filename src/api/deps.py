@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from src.core import security
 from src.core.config import settings
 from src.db.session import get_db
-from src.models.user import User
+from src.models.user import User, UserRole
 from src.repositories.user import UserRepository
 from src.schemas.token import TokenPayload
 
@@ -38,3 +38,16 @@ async def get_current_user(
         raise HTTPException(status_code=400, detail="Inactive user")
     
     return user
+
+async def get_current_owner(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    """
+    Verifica que el usuario actual tenga rol de OWNER.
+    """
+    if current_user.role != UserRole.OWNER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permisos para realizar esta acción. Se requiere rol de OWNER."
+        )
+    return current_user

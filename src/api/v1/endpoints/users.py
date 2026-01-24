@@ -1,12 +1,13 @@
 from typing import List, Annotated
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
 from src.api import deps
 from src.models.user import User, UserRole
-from src.schemas.user import UserResponse
+from src.schemas.user import UserResponse, UserCreateByOwner
 from src.repositories.user import UserRepository
+from src.services.user import UserService
 
 router = APIRouter()
 
@@ -35,3 +36,21 @@ async def read_users(
         return [current_user]
     
     return await UserRepository.get_all(db=db, skip=skip, limit=limit)
+
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_data: UserCreateByOwner,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_owner: Annotated[User, Depends(deps.get_current_owner)],
+) -> User:
+    """
+    Crear un nuevo usuario (solo para OWNER).
+    
+    Permite a un usuario con rol de OWNER crear nuevos usuarios.
+    Se debe proporcionar:
+    - email: Email del nuevo usuario
+    - password: Contraseña del nuevo usuario
+    - role: Rol del nuevo usuario (owner o member)
+    """
+    return await UserService.create_user_by_owner(db=db, user_data=user_data)
+

@@ -103,27 +103,11 @@ async def change_task_owner(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> Task:
     """
-    Cambiar el propietario de una tarea (solo OWNER).
+    Change the owner of a task (OWNER role only).
     """
-    if current_user.role != UserRole.OWNER:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only owners can change task ownership"
-        )
-    
-    task = await TaskRepository.get_by_id(db, id=task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    
-    new_owner = await UserRepository.get_by_id(db, id=owner_data.owner_id)
-    if not new_owner:
-        raise HTTPException(status_code=404, detail="New owner not found")
-    
-    task.owner_id = owner_data.owner_id
-    db.add(task)
-    await db.commit()
-    await db.refresh(task)
-    
-    await db.refresh(task, ["owner"])
-    
-    return task
+    return await TaskService.change_task_owner(
+        db=db,
+        task_id=task_id,
+        new_owner_id=owner_data.owner_id,
+        current_user=current_user
+    )

@@ -16,7 +16,7 @@ async def read_current_user(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> User:
     """
-    Obtener información del usuario actual.
+    Get current user information.
     """
     return current_user
 
@@ -28,11 +28,11 @@ async def read_users(
     limit: int = 100,
 ) -> List[User]:
     """
-    Obtener lista de usuarios (solo para OWNER).
+    Get list of users (OWNER role only).
     """
-    # Solo los OWNER pueden ver la lista de usuarios
+    # Only OWNER can see the full user list
     if current_user.role != UserRole.OWNER:
-        # Si no es owner, solo retornar el usuario actual
+        # If not owner, only return current user
         return [current_user]
     
     return await UserRepository.get_all(db=db, skip=skip, limit=limit)
@@ -44,13 +44,13 @@ async def create_user(
     current_owner: Annotated[User, Depends(deps.get_current_owner)],
 ) -> User:
     """
-    Crear un nuevo usuario (solo para OWNER).
+    Create a new user (OWNER role only).
     
-    Permite a un usuario con rol de OWNER crear nuevos usuarios.
-    Se debe proporcionar:
-    - email: Email del nuevo usuario
-    - password: Contraseña del nuevo usuario
-    - role: Rol del nuevo usuario (owner o member)
+    Allows a user with OWNER role to create new users.
+    Required fields:
+    - email: Email of the new user
+    - password: Password of the new user
+    - role: Role of the new user (owner or member)
     """
     return await UserService.create_user_by_owner(db=db, user_data=user_data)
 

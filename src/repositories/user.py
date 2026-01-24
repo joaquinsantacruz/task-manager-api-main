@@ -10,7 +10,7 @@ class UserRepository:
     
     @staticmethod
     async def get_by_id(db: AsyncSession, id: int) -> Optional[User]:
-        """Busca un usuario por su ID."""
+        """Find a user by their ID."""
         result = await db.scalars(
             select(User).where(User.id == id)
         )
@@ -18,7 +18,7 @@ class UserRepository:
     
     @staticmethod
     async def get_by_email(db: AsyncSession, email: str) -> Optional[User]:
-        """Busca un usuario por su email."""
+        """Find a user by their email."""
         result = await db.scalars(
             select(User).where(User.email == email)
         )
@@ -26,7 +26,7 @@ class UserRepository:
     
     @staticmethod
     async def get_all(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[User]:
-        """Obtiene todos los usuarios activos."""
+        """Get all active users."""
         result = await db.scalars(
             select(User).where(User.is_active == True).offset(skip).limit(limit)
         )
@@ -34,7 +34,7 @@ class UserRepository:
 
     @staticmethod
     async def create(db: AsyncSession, user_in: UserCreate) -> User:
-        """Crea un usuario nuevo hasheando su contraseña."""
+        """Create a new user with hashed password."""
         db_user = User(
             email=user_in.email,
             hashed_password=get_password_hash(user_in.password),

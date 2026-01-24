@@ -67,7 +67,7 @@ class TaskService:
         # Verify current user has OWNER role
         require_owner_role(current_user)
         
-        # Verificar que la tarea existe
+        # Verify that the task exists
         task = await TaskRepository.get_by_id(db, id=task_id)
         if not task:
             raise HTTPException(
@@ -75,7 +75,7 @@ class TaskService:
                 detail="Task not found"
             )
         
-        # Verificar que el nuevo propietario existe
+        # Verify that the new owner exists
         new_owner = await UserRepository.get_by_id(db, id=new_owner_id)
         if not new_owner:
             raise HTTPException(
@@ -83,14 +83,14 @@ class TaskService:
                 detail="New owner not found"
             )
         
-        # Verificar que el nuevo propietario está activo
+        # Verify that the new owner is active
         if not new_owner.is_active:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot assign task to inactive user"
             )
         
-        # Actualizar el propietario de la tarea
+        # Update the task owner
         task.owner_id = new_owner_id
         db.add(task)
         await db.commit()

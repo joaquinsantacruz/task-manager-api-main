@@ -33,9 +33,15 @@ async def get_current_user(
     
     user = await UserRepository.get_by_email(db, email=token_data.sub)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials"
+        )
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Could not validate credentials"
+        )
     
     return user
 
@@ -43,11 +49,11 @@ async def get_current_owner(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     """
-    Verifica que el usuario actual tenga rol de OWNER.
+    Verify that the current user has OWNER role.
     """
     if current_user.role != UserRole.OWNER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permisos para realizar esta acción. Se requiere rol de OWNER."
+            detail="Insufficient permissions. OWNER role required."
         )
     return current_user

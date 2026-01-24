@@ -14,17 +14,19 @@ class UserService:
         user_data: UserCreateByOwner
     ) -> User:
         """
-        Crea un nuevo usuario. Valida que el email no exista.
+        Create a new user. Validates that the email doesn't exist.
+        
+        Note: Returns a generic error message to prevent email enumeration attacks.
         """
-        # Verificar si el email ya existe
+        # Check if email already exists
         existing_user = await UserRepository.get_by_email(db, email=user_data.email)
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El email ya está registrado"
+                detail="Invalid user data"
             )
         
-        # Crear el usuario usando el repositorio
+        # Create user using repository
         user_create = UserCreate(
             email=user_data.email,
             password=user_data.password,

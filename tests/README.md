@@ -70,6 +70,14 @@ Integration tests for notification endpoints:
 - `TestCheckDueDates`: POST /api/v1/notifications/check-due-dates (owner-only)
 - `TestNotificationIntegrationScenarios`: Complex notification workflows
 
+**Comment Tests** (`test_comments.py`):
+Integration tests for comment endpoints:
+- `TestGetTaskComments`: GET /api/v1/tasks/{task_id}/comments (owner and OWNER role access)
+- `TestCreateComment`: POST /api/v1/tasks/{task_id}/comments (owner and OWNER role access)
+- `TestUpdateComment`: PUT /api/v1/tasks/comments/{comment_id} (author-only)
+- `TestDeleteComment`: DELETE /api/v1/tasks/comments/{comment_id} (author and OWNER role)
+- `TestCommentIntegrationScenarios`: Complex comment workflows and moderation
+
 ## Setup
 
 ### 1. Install Dependencies
@@ -247,8 +255,6 @@ When adding new tests:
 ## Next Steps
 
 Consider adding tests for:
-- Comment endpoints
-- Notification endpoints
 - Task assignment and ownership transfer
 - Permission edge cases
 - Performance/load testing

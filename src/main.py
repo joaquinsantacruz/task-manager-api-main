@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
-from src.api.v1.endpoints import login, tasks, users
+from src.api.v1.endpoints import login, tasks, users, comments, notifications
 
 app = FastAPI(
     title="Task Manager API",
@@ -29,6 +29,8 @@ app.add_middleware(
 app.include_router(login.router, prefix=settings.API_V1_STR, tags=["login"])
 app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}/tasks", tags=["tasks"])
 app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
+app.include_router(comments.router, prefix=f"{settings.API_V1_STR}/tasks", tags=["comments"])
+app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifications", tags=["notifications"])
 
 @app.get("/")
 async def root():

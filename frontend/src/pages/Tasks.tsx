@@ -2,14 +2,27 @@ import { useEffect, useState } from 'react';
 import { TaskService } from '../services/taskService';
 import { Task, TaskStatus } from '../types';
 import TaskFormModal from '../components/TaskFormModal';
+import TaskDetailModal from '../components/TaskDetailModal';
+import TaskList from '../components/TaskList';
+import TaskFilter from '../components/TaskFilter';
+import { useTaskFilter } from '../hooks/useTaskFilter';
+
+const STATUS_ROTATION: Record<TaskStatus, TaskStatus> = {
+  'todo': 'in_progress',
+  'in_progress': 'done',
+  'done': 'todo'
+};
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  
+  const { selectedStatuses, setSelectedStatuses, filteredTasks } = useTaskFilter(tasks);
 
   const fetchTasks = async () => {
     try {
-      // 3. Usamos el servicio en lugar de api.get directo
       const data = await TaskService.getAll();
       setTasks(data);
     } catch (error) {
@@ -27,22 +40,19 @@ export default function Tasks() {
       fetchTasks();
     } catch (error) {
       console.error("Error creating task", error);
-      throw error; // Re-lanzar para que el modal lo maneje
+      throw error;
     }
   };
 
-  const handleToggleStatus = async (task: Task) => {
-    try {
-      // Definimos la rotación: todo -> in_progress -> done -> todo
-      const statusRotation: Record<TaskStatus, TaskStatus> = {
-        'todo': 'in_progress',
-        'in_progress': 'done',
-        'done': 'todo'
-      };
+  const handleOpenDetail = (task: Task) => {
+    setSelectedTask(task);
+    setIsDetailModalOpen(true);
+  };
 
-      const newStatus = statusRotation[task.status];
-      
-      // Usamos el método específico del servicio
+  const handleToggleStatus = async (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const newStatus = STATUS_ROTATION[task.status];
       await TaskService.updateStatus(task.id, newStatus);
       fetchTasks();
     } catch (error) {
@@ -50,8 +60,28 @@ export default function Tasks() {
     }
   };
 
+  const handleChangeStatus = async (taskId: number, newStatus: TaskStatus) => {
+    try {
+      await TaskService.updateStatus(taskId, newStatus);
+      fetchTasks();
+      setIsDetailModalOpen(false);
+    } catch (error) {
+      console.error("Error updating task", error);
+    }
+  };
+
+  const handleChangeOwner = async (taskId: number, newOwnerId: number) => {
+    try {
+      await TaskService.changeOwner(taskId, newOwnerId);
+      fetchTasks();
+      setIsDetailModalOpen(false);
+    } catch (error) {
+      console.error("Error changing task owner", error);
+    }
+  };
+
   const handleDelete = async (id: number) => {
-    if(!confirm("¿Borrar tarea?")) return;
+    if (!confirm("¿Borrar tarea?")) return;
     try {
       await TaskService.delete(id);
       fetchTasks();
@@ -87,34 +117,25 @@ export default function Tasks() {
         onSubmit={handleCreateTask}
       />
 
-      <ul className="task-list">
-        {tasks.map(task => (
-          <li key={task.id} className="task-item">
-            <span 
-                onClick={() => handleToggleStatus(task)}
-                className={`task-text ${task.status === 'done' ? 'completed' : ''}`}
-                style={{
-                    // Aplicamos tachado solo si es 'done' (según backend)
-                    textDecoration: task.status === 'done' ? 'line-through' : 'none',
-                    color: task.status === 'done' ? '#888' : 'inherit'
-                }}
-            >
-              {/* Mostramos el estado visualmente para saber en qué etapa está */}
-              <small style={{marginRight: '10px', fontWeight: 'bold'}}>
-                [{task.status.toUpperCase().replace('_', ' ')}]
-              </small>
-              {task.title}
-            </span>
-            
-            <button 
-                onClick={() => handleDelete(task.id)} 
-                className="btn-delete"
-            >
-                Eliminar
-            </button>
-          </li>
-        ))}
-      </ul>
+      <TaskDetailModal 
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        task={selectedTask}
+        onChangeStatus={handleChangeStatus}
+        onChangeOwner={handleChangeOwner}
+      />
+
+      <TaskFilter 
+        selectedStatuses={selectedStatuses}
+        onFilterChange={setSelectedStatuses}
+      />
+
+      <TaskList 
+        tasks={filteredTasks}
+        onOpenDetail={handleOpenDetail}
+        onToggleStatus={handleToggleStatus}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

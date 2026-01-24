@@ -6,9 +6,33 @@ from src.models.user import User, UserRole
 from src.models.task import Task
 from src.repositories.task import TaskRepository
 from src.repositories.user import UserRepository
+from src.schemas.task import TaskCreate
 from src.core.permissions import require_owner_role, require_task_modification
 
 class TaskService:
+    
+    @staticmethod
+    async def create_task(
+        db: AsyncSession,
+        task_data: TaskCreate,
+        current_user: User
+    ) -> Task:
+        """
+        Create a new task.
+        
+        Validations:
+        - User must be active to create tasks
+        
+        The task will be automatically assigned to the current user.
+        """
+        # Verify that the user is active
+        if not current_user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Inactive users cannot create tasks"
+            )
+        
+        return await TaskRepository.create(db, task_data, current_user.id)
     
     @staticmethod
     async def get_tasks_for_user(
@@ -96,7 +120,7 @@ class TaskService:
         await db.commit()
         await db.refresh(task)
         
-        # Cargar la relación owner
+        # Load the owner relationship
         await db.refresh(task, ["owner"])
         
         return task

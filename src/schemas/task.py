@@ -1,6 +1,6 @@
 from typing import Optional, Any
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict, model_validator
+from datetime import datetime, timezone
+from pydantic import BaseModel, ConfigDict, model_validator, field_validator
 from src.models.task import TaskStatus
 
 class TaskBase(BaseModel):
@@ -10,13 +10,38 @@ class TaskBase(BaseModel):
     due_date: Optional[datetime] = None
 
 class TaskCreate(TaskBase):
-    pass
+    
+    @field_validator('due_date')
+    @classmethod
+    def validate_due_date_not_past(cls, v: Optional[datetime]) -> Optional[datetime]:
+        """Validate that due_date is not in the past."""
+        if v is not None:
+            # Make both timezone-aware for comparison
+            now = datetime.now(timezone.utc)
+            due_date = v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+            
+            if due_date < now:
+                raise ValueError('Due date cannot be in the past')
+        return v
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[TaskStatus] = None
     due_date: Optional[datetime] = None
+    
+    @field_validator('due_date')
+    @classmethod
+    def validate_due_date_not_past(cls, v: Optional[datetime]) -> Optional[datetime]:
+        """Validate that due_date is not in the past."""
+        if v is not None:
+            # Make both timezone-aware for comparison
+            now = datetime.now(timezone.utc)
+            due_date = v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+            
+            if due_date < now:
+                raise ValueError('Due date cannot be in the past')
+        return v
 
 class TaskResponse(TaskBase):
     id: int

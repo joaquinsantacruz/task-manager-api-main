@@ -23,7 +23,7 @@ async def read_tasks(
     only_mine: bool = False,
 ) -> List[Task]:
     """
-    Recuperar tareas propias.
+    Retrieve own tasks.
     """
     return await TaskService.get_tasks_for_user(
         db=db,
@@ -41,12 +41,13 @@ async def create_task(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> Task:
     """
-    Crear una nueva tarea.
+    Create a new task.
     """
-    task = await TaskRepository.create(
-        db=db, obj_in=task_in, owner_id=current_user.id
+    return await TaskService.create_task(
+        db=db,
+        task_data=task_in,
+        current_user=current_user
     )
-    return task
 
 @router.get("/{task_id}", response_model=TaskResponse)
 async def read_task(
@@ -56,7 +57,7 @@ async def read_task(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> Task:
     """
-    Obtener una tarea específica por ID (solo si te pertenece).
+    Get a specific task by ID (only if it belongs to you).
     """
     task = await TaskRepository.get_by_id_and_owner(
         db=db, id=task_id, owner_id=current_user.id
@@ -74,7 +75,7 @@ async def update_task(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> Task:
     """
-    Actualizar una tarea propia.
+    Update own task.
     """
     task = await TaskService.get_task_for_action(db, task_id, current_user)
     
@@ -89,7 +90,7 @@ async def delete_task(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ):
     """
-    Eliminar una tarea propia.
+    Delete own task.
     """
     task = await TaskService.get_task_for_action(db, task_id, current_user)
     

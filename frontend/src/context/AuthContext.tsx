@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import api from '../api/axios';
-import { AuthSession } from '../types';
+import { AuthSession, User } from '../types';
+import { UserService } from '../services/userService';
 
 // 2. Definimos la forma del Contexto
 interface AuthContextType {
@@ -21,9 +22,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      setUser({ token });
+      // Obtener información del usuario
+      UserService.getCurrentUser()
+        .then(userData => {
+          setUser({ token, user: userData });
+        })
+        .catch(() => {
+          // Si falla, solo guardar el token
+          setUser({ token });
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   // 5. Tipamos los argumentos
@@ -40,7 +53,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const { access_token } = response.data;
       localStorage.setItem('token', access_token);
-      setUser({ token: access_token });
+      
+      // Obtener información del usuario después del login
+      try {
+        const userData = await UserService.getCurrentUser();
+        setUser({ token: access_token, user: userData });
+      } catch {
+        setUser({ token: access_token });
+      }
+      
       return { success: true };
     } catch (error: any) { // 6. Manejo de error (any o unknown)
       const errorMessage = error.response?.data?.detail || 'Login failed';

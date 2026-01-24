@@ -4,10 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
 from src.api import deps
-from src.models.user import User
+from src.models.user import User, UserRole
 from src.models.task import Task
 from src.schemas.task import TaskCreate, TaskResponse, TaskUpdate
+from src.schemas.task_owner import ChangeOwnerRequest
 from src.repositories.task import TaskRepository
+from src.repositories.user import UserRepository
 from src.services.task import TaskService
 
 router = APIRouter()
@@ -92,3 +94,36 @@ async def delete_task(
     task = await TaskService.get_task_for_action(db, task_id, current_user)
     
     await TaskRepository.delete(db=db, db_obj=task)
+
+@router.patch("/{task_id}/owner", response_model=TaskResponse)
+async def change_task_owner(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    task_id: int,
+    owner_data: ChangeOwnerRequest,
+    current_user: Annotated[User, Depends(deps.get_current_user)],
+) -> Task:
+    """
+    Cambiar el propietario de una tarea (solo OWNER).
+    """
+    if current_user.role != UserRole.OWNER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only owners can change task ownership"
+        )
+    
+    task = await TaskRepository.get_by_id(db, id=task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    new_owner = await UserRepository.get_by_id(db, id=owner_data.owner_id)
+    if not new_owner:
+        raise HTTPException(status_code=404, detail="New owner not found")
+    
+    task.owner_id = owner_data.owner_id
+    db.add(task)
+    await db.commit()
+    await db.refresh(task)
+    
+    await db.refresh(task, ["owner"])
+    
+    return task

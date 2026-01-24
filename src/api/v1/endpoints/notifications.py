@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.session import get_db
 from src.api import deps
 from src.models.user import User
+from src.models.notification import Notification
 from src.schemas.notification import NotificationResponse
 from src.services.notification import NotificationService
 
@@ -20,20 +21,34 @@ async def get_notifications(
     limit: int = 100,
 ) -> List[NotificationResponse]:
     """
-    Obtener todas las notificaciones del usuario actual.
+    Get all notifications for the current user.
     
-    Parámetros:
-    - unread_only: Si es True, solo devuelve notificaciones no leídas
-    - skip: Número de registros a saltar (paginación)
-    - limit: Número máximo de registros a devolver
+    Parameters:
+    - unread_only: If True, only returns unread notifications
+    - skip: Number of records to skip (pagination)
+    - limit: Maximum number of records to return
     """
-    return await NotificationService.get_user_notifications(
+    notifications = await NotificationService.get_user_notifications(
         db=db,
         current_user=current_user,
         unread_only=unread_only,
         skip=skip,
         limit=limit
     )
+    
+    return [
+        NotificationResponse(
+            id=notif.id,
+            message=notif.message,
+            notification_type=notif.notification_type,
+            user_id=notif.user_id,
+            task_id=notif.task_id,
+            task_title=notif.task.title if notif.task else None,
+            is_read=notif.is_read,
+            created_at=notif.created_at
+        )
+        for notif in notifications
+    ]
 
 
 @router.get("/unread-count", response_model=dict)
@@ -42,7 +57,7 @@ async def get_unread_count(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> dict:
     """
-    Obtener el número de notificaciones no leídas del usuario actual.
+    Get the count of unread notifications for the current user.
     """
     count = await NotificationService.count_unread_notifications(
         db=db,
@@ -58,12 +73,23 @@ async def mark_notification_as_read(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> NotificationResponse:
     """
-    Marcar una notificación como leída.
+    Mark a notification as read.
     """
-    return await NotificationService.mark_notification_as_read(
+    notification = await NotificationService.mark_notification_as_read(
         db=db,
         notification_id=notification_id,
         current_user=current_user
+    )
+    
+    return NotificationResponse(
+        id=notification.id,
+        message=notification.message,
+        notification_type=notification.notification_type,
+        user_id=notification.user_id,
+        task_id=notification.task_id,
+        task_title=notification.task.title if notification.task else None,
+        is_read=notification.is_read,
+        created_at=notification.created_at
     )
 
 
@@ -74,7 +100,7 @@ async def delete_notification(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> None:
     """
-    Eliminar una notificación.
+    Delete a notification.
     """
     await NotificationService.delete_notification(
         db=db,
@@ -89,15 +115,15 @@ async def check_due_dates(
     current_user: Annotated[User, Depends(deps.get_current_owner)],
 ) -> dict:
     """
-    Generar notificaciones para tareas con fechas de vencimiento.
-    Solo usuarios OWNER pueden ejecutar esta función.
+    Generate notifications for tasks with upcoming or overdue dates.
+    Only users with OWNER role can execute this function.
     
-    Esta función revisa todas las tareas y genera notificaciones para:
-    - Tareas que vencen hoy
-    - Tareas que vencen en las próximas 24 horas
-    - Tareas vencidas y no completadas
+    This function reviews all tasks and generates notifications for:
+    - Tasks due today
+    - Tasks due in the next 24 hours
+    - Overdue and incomplete tasks
     
-    En producción, esto debería ejecutarse automáticamente con un scheduler.
+    In production, this should run automatically with a scheduler.
     """
     notifications_created = await NotificationService.generate_due_date_notifications(db)
     

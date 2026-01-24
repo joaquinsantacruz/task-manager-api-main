@@ -5,10 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.models.notification import NotificationType
+from src.models.notification import Notification, NotificationType
 from src.models.task import Task, TaskStatus
 from src.models.user import User
-from src.schemas.notification import NotificationResponse
 from src.repositories.notification import NotificationRepository
 
 
@@ -21,31 +20,17 @@ class NotificationService:
         unread_only: bool = False,
         skip: int = 0,
         limit: int = 100
-    ) -> List[NotificationResponse]:
+    ) -> List[Notification]:
         """
         Obtiene las notificaciones de un usuario.
         """
-        notifications = await NotificationRepository.get_user_notifications(
+        return await NotificationRepository.get_user_notifications(
             db=db,
             user_id=current_user.id,
             unread_only=unread_only,
             skip=skip,
             limit=limit
         )
-        
-        return [
-            NotificationResponse(
-                id=notif.id,
-                message=notif.message,
-                notification_type=notif.notification_type,
-                user_id=notif.user_id,
-                task_id=notif.task_id,
-                task_title=notif.task.title if notif.task else None,
-                is_read=notif.is_read,
-                created_at=notif.created_at
-            )
-            for notif in notifications
-        ]
     
     @staticmethod
     async def count_unread_notifications(
@@ -62,7 +47,7 @@ class NotificationService:
         db: AsyncSession,
         notification_id: int,
         current_user: User
-    ) -> NotificationResponse:
+    ) -> Notification:
         """
         Marca una notificación como leída.
         Solo el propietario de la notificación puede marcarla como leída.
@@ -72,28 +57,17 @@ class NotificationService:
         if not notification:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Notificación no encontrada"
+                detail="Notification not found"
             )
         
         # Verificar que la notificación pertenece al usuario actual
         if notification.user_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permisos para modificar esta notificación"
+                detail="You do not have permission to modify this notification"
             )
         
-        updated_notification = await NotificationRepository.mark_as_read(db, notification)
-        
-        return NotificationResponse(
-            id=updated_notification.id,
-            message=updated_notification.message,
-            notification_type=updated_notification.notification_type,
-            user_id=updated_notification.user_id,
-            task_id=updated_notification.task_id,
-            task_title=updated_notification.task.title if updated_notification.task else None,
-            is_read=updated_notification.is_read,
-            created_at=updated_notification.created_at
-        )
+        return await NotificationRepository.mark_as_read(db, notification)
     
     @staticmethod
     async def delete_notification(
@@ -110,14 +84,14 @@ class NotificationService:
         if not notification:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Notificación no encontrada"
+                detail="Notification not found"
             )
         
         # Verificar que la notificación pertenece al usuario actual
         if notification.user_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permisos para eliminar esta notificación"
+                detail="You do not have permission to delete this notification"
             )
         
         await NotificationRepository.delete(db, notification)

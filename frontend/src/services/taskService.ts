@@ -35,5 +35,10 @@ export const TaskService = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/tasks/${id}`);
+  },
+
+  changeOwner: async (id: number, newOwnerId: number): Promise<Task> => {
+    const response = await api.patch<Task>(`/tasks/${id}/owner`, { owner_id: newOwnerId });
+    return response.data;
   }
 };

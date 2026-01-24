@@ -3,6 +3,7 @@ export type TaskStatus = 'todo' | 'in_progress' | 'done';
 
 export interface AuthSession {
   token: string;
+  user?: User;
 }
 
 export interface User {
@@ -19,6 +20,7 @@ export interface Task {
   description?: string | null;
   status: TaskStatus;
   owner_id: number;
+  owner_email?: string;
   created_at: string;
   updated_at?: string | null;
 }

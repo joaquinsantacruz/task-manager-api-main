@@ -16,8 +16,9 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.task import Task, TaskStatus
-from src.models.user import User
+from src.models.user import User, UserRole
 from src.models.comment import Comment
+from src.core.security import get_password_hash
 
 
 class TaskFactory:
@@ -339,3 +340,185 @@ class TestDataBuilder:
             "tasks": self.tasks,
             "comments": self.comments
         }
+
+
+class UserFactory:
+    """
+    Factory for creating User instances in tests.
+    
+    Provides a clean interface for creating users with different roles
+    and configurations. Follows the Single Responsibility Principle -
+    only responsible for user creation.
+    """
+    
+    @staticmethod
+    async def create_user(
+        db_session: AsyncSession,
+        email: str,
+        password: str = "testpassword123",
+        role: UserRole = UserRole.MEMBER,
+        is_active: bool = True,
+        **kwargs
+    ) -> User:
+        """
+        Create a user with the given parameters.
+        
+        This factory method provides a flexible way to create users
+        for testing. All parameters have defaults but can be overridden.
+        
+        Args:
+            db_session: Database session to use
+            email: User's email address
+            password: Plain text password (will be hashed)
+            role: User role (default: UserRole.MEMBER)
+            is_active: Whether user is active (default: True)
+            **kwargs: Additional fields to set on the user
+            
+        Returns:
+            User: The created user instance
+            
+        Example:
+            user = await UserFactory.create_user(
+                db_session=db,
+                email="test@example.com",
+                role=UserRole.OWNER
+            )
+        """
+        user = User(
+            email=email,
+            hashed_password=get_password_hash(password),
+            role=role,
+            is_active=is_active,
+            **kwargs
+        )
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+        return user
+    
+    @staticmethod
+    async def create_owner(
+        db_session: AsyncSession,
+        email: str = "owner@example.com",
+        password: str = "ownerpassword123",
+        **kwargs
+    ) -> User:
+        """
+        Create a user with OWNER role.
+        
+        Convenience method for creating owner users.
+        
+        Args:
+            db_session: Database session to use
+            email: User's email address
+            password: Plain text password
+            **kwargs: Additional fields to pass to create_user
+            
+        Returns:
+            User: The created owner user
+        """
+        return await UserFactory.create_user(
+            db_session=db_session,
+            email=email,
+            password=password,
+            role=UserRole.OWNER,
+            **kwargs
+        )
+    
+    @staticmethod
+    async def create_member(
+        db_session: AsyncSession,
+        email: str = "member@example.com",
+        password: str = "memberpassword123",
+        **kwargs
+    ) -> User:
+        """
+        Create a user with MEMBER role.
+        
+        Convenience method for creating member users.
+        
+        Args:
+            db_session: Database session to use
+            email: User's email address
+            password: Plain text password
+            **kwargs: Additional fields to pass to create_user
+            
+        Returns:
+            User: The created member user
+        """
+        return await UserFactory.create_user(
+            db_session=db_session,
+            email=email,
+            password=password,
+            role=UserRole.MEMBER,
+            **kwargs
+        )
+    
+    @staticmethod
+    async def create_inactive_user(
+        db_session: AsyncSession,
+        email: str = "inactive@example.com",
+        password: str = "testpassword123",
+        role: UserRole = UserRole.MEMBER,
+        **kwargs
+    ) -> User:
+        """
+        Create an inactive user.
+        
+        Useful for testing scenarios where inactive users should be
+        excluded from results or denied access.
+        
+        Args:
+            db_session: Database session to use
+            email: User's email address
+            password: Plain text password
+            role: User role (default: UserRole.MEMBER)
+            **kwargs: Additional fields to pass to create_user
+            
+        Returns:
+            User: The created inactive user
+        """
+        return await UserFactory.create_user(
+            db_session=db_session,
+            email=email,
+            password=password,
+            role=role,
+            is_active=False,
+            **kwargs
+        )
+    
+    @staticmethod
+    async def create_multiple_users(
+        db_session: AsyncSession,
+        count: int = 3,
+        role: UserRole = UserRole.MEMBER,
+        email_prefix: str = "user",
+        **kwargs
+    ) -> list[User]:
+        """
+        Create multiple users at once.
+        
+        Useful for testing list endpoints and pagination.
+        
+        Args:
+            db_session: Database session to use
+            count: Number of users to create
+            role: Role for all users (default: UserRole.MEMBER)
+            email_prefix: Prefix for email addresses
+            **kwargs: Additional fields to pass to create_user
+            
+        Returns:
+            list[User]: List of created users
+        """
+        users = []
+        for i in range(count):
+            user = await UserFactory.create_user(
+                db_session=db_session,
+                email=f"{email_prefix}{i+1}@example.com",
+                password=f"password{i+1}",
+                role=role,
+                **kwargs
+            )
+            users.append(user)
+        return users
+

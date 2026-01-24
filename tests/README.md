@@ -13,6 +13,7 @@ tests/
 ├── test_config.py       # Test-specific settings
 ├── factories.py         # Factory classes for creating test data
 ├── test_tasks.py        # Integration tests for task endpoints
+├── test_users.py        # Integration tests for user endpoints
 └── README.md           # This file
 ```
 
@@ -37,9 +38,12 @@ Provides reusable test components following dependency injection:
 Factory classes for creating test data:
 - `TaskFactory`: Create tasks with various configurations
 - `CommentFactory`: Create comments on tasks
+- `UserFactory`: Create users with different roles and states
 - `TestDataBuilder`: Build complex test scenarios with multiple entities
 
-#### 4. **Test Suites** (`test_tasks.py`)
+#### 4. **Test Suites**
+
+**Task Tests** (`test_tasks.py`):
 Comprehensive integration tests organized by endpoint:
 - `TestListTasks`: GET /api/v1/tasks
 - `TestCreateTask`: POST /api/v1/tasks
@@ -47,6 +51,13 @@ Comprehensive integration tests organized by endpoint:
 - `TestUpdateTask`: PUT /api/v1/tasks/{id}
 - `TestDeleteTask`: DELETE /api/v1/tasks/{id}
 - `TestComplexTaskScenarios`: Multi-step workflows
+
+**User Tests** (`test_users.py`):
+Integration tests for user management endpoints:
+- `TestGetCurrentUser`: GET /api/v1/users/me
+- `TestListUsers`: GET /api/v1/users/ (role-based access)
+- `TestCreateUser`: POST /api/v1/users/ (owner-only)
+- `TestUserIntegrationScenarios`: Complete user lifecycle flows
 
 ## Setup
 
@@ -130,16 +141,30 @@ async def test_example(client, auth_headers):
 
 ### Using Factories
 ```python
-async def test_with_factory(db_session, test_user_owner):
-    # Create a task using the factory
+# Create a task using TaskFactory
+async def test_with_task_factory(db_session, test_user_owner):
     task = await TaskFactory.create_task(
         db_session=db_session,
         owner=test_user_owner,
         title="Custom Title"
     )
-    
     assert task.id is not None
     assert task.title == "Custom Title"
+
+# Create a user using UserFactory
+async def test_with_user_factory(db_session):
+    user = await UserFactory.create_member(
+        db_session=db_session,
+        email="test@example.com"
+    )
+    assert user.role == UserRole.MEMBER
+    
+    # Create multiple users at once
+    users = await UserFactory.create_multiple_users(
+        db_session=db_session,
+        count=5
+    )
+    assert len(users) == 5
 ```
 
 ### Building Complex Scenarios
@@ -213,6 +238,7 @@ When adding new tests:
 Consider adding tests for:
 - Comment endpoints
 - Notification endpoints
-- Authentication flow
+- Task assignment and ownership transfer
 - Permission edge cases
 - Performance/load testing
+- End-to-end user workflows

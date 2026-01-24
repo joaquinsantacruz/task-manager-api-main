@@ -4,6 +4,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 
 from src.models.notification import Notification
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 
 class NotificationRepository:
@@ -24,7 +25,7 @@ class NotificationRepository:
         user_id: int, 
         unread_only: bool = False,
         skip: int = 0, 
-        limit: int = 100
+        limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Notification]:
         """Obtiene las notificaciones de un usuario."""
         query = (

@@ -1,11 +1,24 @@
 from typing import Optional, Any
 from datetime import datetime, timezone
-from pydantic import BaseModel, ConfigDict, model_validator, field_validator
+from pydantic import BaseModel, ConfigDict, model_validator, field_validator, Field
 from src.models.task import TaskStatus
+from src.core.constants import (
+    TASK_TITLE_MIN_LENGTH,
+    TASK_TITLE_MAX_LENGTH,
+    TASK_DESCRIPTION_MAX_LENGTH
+)
 
 class TaskBase(BaseModel):
-    title: str
-    description: Optional[str] = None
+    title: str = Field(
+        min_length=TASK_TITLE_MIN_LENGTH,
+        max_length=TASK_TITLE_MAX_LENGTH,
+        description=f"Task title ({TASK_TITLE_MIN_LENGTH}-{TASK_TITLE_MAX_LENGTH} characters)"
+    )
+    description: Optional[str] = Field(
+        None,
+        max_length=TASK_DESCRIPTION_MAX_LENGTH,
+        description=f"Task description (max {TASK_DESCRIPTION_MAX_LENGTH} characters)"
+    )
     status: TaskStatus = TaskStatus.TODO
     due_date: Optional[datetime] = None
 
@@ -25,8 +38,17 @@ class TaskCreate(TaskBase):
         return v
 
 class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: Optional[str] = Field(
+        None,
+        min_length=TASK_TITLE_MIN_LENGTH,
+        max_length=TASK_TITLE_MAX_LENGTH,
+        description=f"Task title ({TASK_TITLE_MIN_LENGTH}-{TASK_TITLE_MAX_LENGTH} characters)"
+    )
+    description: Optional[str] = Field(
+        None,
+        max_length=TASK_DESCRIPTION_MAX_LENGTH,
+        description=f"Task description (max {TASK_DESCRIPTION_MAX_LENGTH} characters)"
+    )
     status: Optional[TaskStatus] = None
     due_date: Optional[datetime] = None
     

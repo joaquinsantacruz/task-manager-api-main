@@ -8,6 +8,7 @@ from src.models.user import User
 from src.models.notification import Notification
 from src.schemas.notification import NotificationResponse
 from src.services.notification import NotificationService
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 router = APIRouter()
 
@@ -18,7 +19,7 @@ async def get_notifications(
     current_user: Annotated[User, Depends(deps.get_current_user)],
     unread_only: bool = False,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = DEFAULT_PAGE_SIZE,
 ) -> List[NotificationResponse]:
     """
     Get all notifications for the current user.

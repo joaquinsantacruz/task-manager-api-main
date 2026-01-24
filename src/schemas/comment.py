@@ -1,10 +1,15 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+from src.core.constants import COMMENT_CONTENT_MIN_LENGTH, COMMENT_CONTENT_MAX_LENGTH
 
 
 class CommentBase(BaseModel):
-    content: str
+    content: str = Field(
+        min_length=COMMENT_CONTENT_MIN_LENGTH,
+        max_length=COMMENT_CONTENT_MAX_LENGTH,
+        description=f"Comment content ({COMMENT_CONTENT_MIN_LENGTH}-{COMMENT_CONTENT_MAX_LENGTH} characters)"
+    )
 
 
 class CommentCreate(CommentBase):
@@ -14,7 +19,11 @@ class CommentCreate(CommentBase):
 
 class CommentUpdate(BaseModel):
     """Schema para actualizar un comentario."""
-    content: str
+    content: str = Field(
+        min_length=COMMENT_CONTENT_MIN_LENGTH,
+        max_length=COMMENT_CONTENT_MAX_LENGTH,
+        description=f"Comment content ({COMMENT_CONTENT_MIN_LENGTH}-{COMMENT_CONTENT_MAX_LENGTH} characters)"
+    )
 
 
 class CommentResponse(CommentBase):

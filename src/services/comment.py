@@ -8,6 +8,7 @@ from src.schemas.comment import CommentCreate, CommentUpdate
 from src.repositories.comment import CommentRepository
 from src.repositories.task import TaskRepository
 from src.core.permissions import require_task_access, require_comment_modification, require_comment_deletion
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 
 class CommentService:
@@ -18,7 +19,7 @@ class CommentService:
         task_id: int,
         current_user: User,
         skip: int = 0,
-        limit: int = 100
+        limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Comment]:
         """
         Get comments for a task.

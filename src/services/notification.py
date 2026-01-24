@@ -10,6 +10,7 @@ from src.models.task import Task, TaskStatus
 from src.models.user import User
 from src.repositories.notification import NotificationRepository
 from src.core.permissions import require_notification_access
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 
 class NotificationService:
@@ -20,7 +21,7 @@ class NotificationService:
         current_user: User,
         unread_only: bool = False,
         skip: int = 0,
-        limit: int = 100
+        limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Notification]:
         """
         Obtiene las notificaciones de un usuario.

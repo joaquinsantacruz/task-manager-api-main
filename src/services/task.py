@@ -8,6 +8,7 @@ from src.repositories.task import TaskRepository
 from src.repositories.user import UserRepository
 from src.schemas.task import TaskCreate
 from src.core.permissions import require_owner_role, require_task_modification
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 class TaskService:
     
@@ -39,7 +40,7 @@ class TaskService:
         db: AsyncSession, 
         user: User, 
         skip: int = 0, 
-        limit: int = 100,
+        limit: int = DEFAULT_PAGE_SIZE,
         only_mine: bool = False
     ) -> List[Task]:
         

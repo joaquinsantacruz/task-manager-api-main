@@ -8,6 +8,7 @@ from src.models.user import User, UserRole
 from src.schemas.user import UserResponse, UserCreateByOwner
 from src.repositories.user import UserRepository
 from src.services.user import UserService
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 router = APIRouter()
 
@@ -25,7 +26,7 @@ async def read_users(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
     skip: int = 0,
-    limit: int = 100,
+    limit: int = DEFAULT_PAGE_SIZE,
 ) -> List[User]:
     """
     Get list of users (OWNER role only).

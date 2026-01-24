@@ -5,6 +5,7 @@ from sqlalchemy.orm import joinedload
 
 from src.models.comment import Comment
 from src.schemas.comment import CommentCreate, CommentUpdate
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 
 class CommentRepository:
@@ -20,7 +21,7 @@ class CommentRepository:
         return result.one_or_none()
     
     @staticmethod
-    async def get_by_task(db: AsyncSession, task_id: int, skip: int = 0, limit: int = 100) -> List[Comment]:
+    async def get_by_task(db: AsyncSession, task_id: int, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE) -> List[Comment]:
         """Obtiene todos los comentarios de una tarea, ordenados por fecha de creación."""
         result = await db.scalars(
             select(Comment)

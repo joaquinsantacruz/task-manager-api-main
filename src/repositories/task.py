@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from src.models.task import Task
 from src.schemas.task import TaskCreate, TaskUpdate
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 class TaskRepository:
     
@@ -36,7 +37,7 @@ class TaskRepository:
 
     @staticmethod
     async def get_all(
-        db: AsyncSession, skip: int = 0, limit: int = 100
+        db: AsyncSession, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Task]:
         """Return all tasks (for owner use)."""
         query = select(Task).options(selectinload(Task.owner)).offset(skip).limit(limit)
@@ -45,7 +46,7 @@ class TaskRepository:
 
     @staticmethod
     async def get_multi_by_owner(
-        db: AsyncSession, owner_id: int, skip: int = 0, limit: int = 100
+        db: AsyncSession, owner_id: int, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Task]:
         """Return only the tasks of the logged-in user."""
         query = select(Task).options(selectinload(Task.owner)).where(Task.owner_id == owner_id).offset(skip).limit(limit)

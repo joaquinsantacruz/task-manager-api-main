@@ -7,6 +7,7 @@ from src.api import deps
 from src.models.user import User
 from src.schemas.comment import CommentCreate, CommentUpdate, CommentResponse
 from src.services.comment import CommentService
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ async def get_task_comments(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
     skip: int = 0,
-    limit: int = 100,
+    limit: int = DEFAULT_PAGE_SIZE,
 ) -> List[CommentResponse]:
     """
     Get all comments for a task.

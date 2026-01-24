@@ -5,6 +5,7 @@ from sqlalchemy import select
 from src.models.user import User
 from src.schemas.user import UserCreate
 from src.core.security import get_password_hash
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 class UserRepository:
     
@@ -25,7 +26,7 @@ class UserRepository:
         return result.one_or_none()
     
     @staticmethod
-    async def get_all(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[User]:
+    async def get_all(db: AsyncSession, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE) -> List[User]:
         """Get all active users."""
         result = await db.scalars(
             select(User).where(User.is_active == True).offset(skip).limit(limit)

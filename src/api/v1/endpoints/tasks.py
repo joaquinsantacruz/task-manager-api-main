@@ -11,6 +11,7 @@ from src.schemas.task_owner import ChangeOwnerRequest
 from src.repositories.task import TaskRepository
 from src.repositories.user import UserRepository
 from src.services.task import TaskService
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 router = APIRouter()
 
@@ -19,7 +20,7 @@ async def read_tasks(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
     skip: int = 0,
-    limit: int = 100,
+    limit: int = DEFAULT_PAGE_SIZE,
     only_mine: bool = False,
 ) -> List[Task]:
     """

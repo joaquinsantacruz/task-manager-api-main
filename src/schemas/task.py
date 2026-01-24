@@ -44,6 +44,7 @@ class TaskResponse(TaskBase):
                     'title': data.title,
                     'description': data.description,
                     'status': data.status,
+                    'due_date': data.due_date,
                     'owner_id': data.owner_id,
                     'created_at': data.created_at,
                     'updated_at': data.updated_at,

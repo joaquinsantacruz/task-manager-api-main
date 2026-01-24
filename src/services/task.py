@@ -6,6 +6,7 @@ from src.models.user import User, UserRole
 from src.models.task import Task
 from src.repositories.task import TaskRepository
 from src.repositories.user import UserRepository
+from src.core.permissions import require_owner_role, require_task_modification
 
 class TaskService:
     
@@ -33,17 +34,16 @@ class TaskService:
         user: User
     ) -> Task:
         """
-        Busca una tarea y verifica si el usuario tiene permiso para modificarla.
-        - OWNER: Puede modificar CUALQUIER tarea.
-        - MEMBER: Solo puede modificar las suyas.
+        Fetch a task and verify if the user has permission to modify it.
+        - OWNER role: Can modify ANY task
+        - MEMBER role: Can only modify their own tasks
         """
         task = await TaskRepository.get_by_id(db, id=task_id)
         
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
 
-        if task.owner_id != user.id and user.role != UserRole.OWNER:
-            raise HTTPException(status_code=404, detail="Task not found") 
+        require_task_modification(user, task)
             
         return task
     
@@ -55,21 +55,17 @@ class TaskService:
         current_user: User
     ) -> Task:
         """
-        Cambia el propietario de una tarea.
-        Solo usuarios con rol OWNER pueden realizar esta acción.
+        Change the owner of a task.
+        Only users with OWNER role can perform this action.
         
-        Validaciones:
-        - El usuario actual debe tener rol OWNER
-        - La tarea debe existir
-        - El nuevo propietario debe existir
-        - El nuevo propietario debe estar activo
+        Validations:
+        - Current user must have OWNER role
+        - Task must exist
+        - New owner must exist
+        - New owner must be active
         """
-        # Verificar que el usuario actual tiene rol OWNER
-        if current_user.role != UserRole.OWNER:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only owners can change task ownership"
-            )
+        # Verify current user has OWNER role
+        require_owner_role(current_user)
         
         # Verificar que la tarea existe
         task = await TaskRepository.get_by_id(db, id=task_id)

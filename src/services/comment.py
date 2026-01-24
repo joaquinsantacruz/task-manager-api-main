@@ -3,10 +3,11 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.comment import Comment
-from src.models.user import User, UserRole
+from src.models.user import User
 from src.schemas.comment import CommentCreate, CommentUpdate
 from src.repositories.comment import CommentRepository
 from src.repositories.task import TaskRepository
+from src.core.permissions import require_task_access, require_comment_modification, require_comment_deletion
 
 
 class CommentService:
@@ -20,10 +21,10 @@ class CommentService:
         limit: int = 100
     ) -> List[Comment]:
         """
-        Obtiene los comentarios de una tarea.
-        Solo el owner de la tarea o usuarios OWNER pueden ver los comentarios.
+        Get comments for a task.
+        Only task owner or users with OWNER role can view comments.
         """
-        # Verificar que la tarea existe
+        # Verify task exists
         task = await TaskRepository.get_by_id(db, task_id)
         if not task:
             raise HTTPException(
@@ -31,12 +32,8 @@ class CommentService:
                 detail="Task not found"
             )
         
-        # Verificar permisos: solo el owner de la tarea o un OWNER puede ver los comentarios
-        if task.owner_id != current_user.id and current_user.role != UserRole.OWNER:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to view comments on this task"
-            )
+        # Verify permissions using centralized function
+        require_task_access(current_user, task)
         
         return await CommentRepository.get_by_task(db, task_id, skip, limit)
     
@@ -48,10 +45,10 @@ class CommentService:
         current_user: User
     ) -> Comment:
         """
-        Crea un comentario en una tarea.
-        Solo el owner de la tarea o usuarios OWNER pueden comentar.
+        Create a comment on a task.
+        Only task owner or users with OWNER role can comment.
         """
-        # Verificar que la tarea existe
+        # Verify task exists
         task = await TaskRepository.get_by_id(db, task_id)
         if not task:
             raise HTTPException(
@@ -59,12 +56,8 @@ class CommentService:
                 detail="Task not found"
             )
         
-        # Verificar permisos: solo el owner de la tarea o un OWNER puede comentar
-        if task.owner_id != current_user.id and current_user.role != UserRole.OWNER:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to comment on this task"
-            )
+        # Verify permissions using centralized function
+        require_task_access(current_user, task)
         
         return await CommentRepository.create(db, task_id, current_user.id, comment_data)
     
@@ -76,8 +69,8 @@ class CommentService:
         current_user: User
     ) -> Comment:
         """
-        Actualiza un comentario.
-        Solo el autor del comentario puede editarlo.
+        Update a comment.
+        Only the comment author can edit it.
         """
         comment = await CommentRepository.get_by_id(db, comment_id)
         if not comment:
@@ -86,12 +79,8 @@ class CommentService:
                 detail="Comment not found"
             )
         
-        # Solo el autor puede editar su comentario
-        if comment.author_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to edit this comment"
-            )
+        # Verify permissions using centralized function
+        require_comment_modification(current_user, comment)
         
         return await CommentRepository.update(db, comment, comment_data)
     
@@ -102,8 +91,8 @@ class CommentService:
         current_user: User
     ) -> None:
         """
-        Elimina un comentario.
-        Solo el autor del comentario o un OWNER pueden eliminarlo.
+        Delete a comment.
+        Only the comment author or users with OWNER role can delete it.
         """
         comment = await CommentRepository.get_by_id(db, comment_id)
         if not comment:
@@ -112,11 +101,7 @@ class CommentService:
                 detail="Comment not found"
             )
         
-        # Solo el autor o un OWNER pueden eliminar el comentario
-        if comment.author_id != current_user.id and current_user.role != UserRole.OWNER:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to delete this comment"
-            )
+        # Verify permissions using centralized function
+        require_comment_deletion(current_user, comment)
         
         await CommentRepository.delete(db, comment)

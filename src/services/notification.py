@@ -9,6 +9,7 @@ from src.models.notification import Notification, NotificationType
 from src.models.task import Task, TaskStatus
 from src.models.user import User
 from src.repositories.notification import NotificationRepository
+from src.core.permissions import require_notification_access
 
 
 class NotificationService:
@@ -49,8 +50,8 @@ class NotificationService:
         current_user: User
     ) -> Notification:
         """
-        Marca una notificación como leída.
-        Solo el propietario de la notificación puede marcarla como leída.
+        Mark a notification as read.
+        Only the notification owner can mark it as read.
         """
         notification = await NotificationRepository.get_by_id(db, notification_id)
         
@@ -60,12 +61,8 @@ class NotificationService:
                 detail="Notification not found"
             )
         
-        # Verificar que la notificación pertenece al usuario actual
-        if notification.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to modify this notification"
-            )
+        # Verify permissions using centralized function
+        require_notification_access(current_user, notification)
         
         return await NotificationRepository.mark_as_read(db, notification)
     
@@ -76,8 +73,8 @@ class NotificationService:
         current_user: User
     ) -> None:
         """
-        Elimina una notificación.
-        Solo el propietario de la notificación puede eliminarla.
+        Delete a notification.
+        Only the notification owner can delete it.
         """
         notification = await NotificationRepository.get_by_id(db, notification_id)
         
@@ -87,12 +84,8 @@ class NotificationService:
                 detail="Notification not found"
             )
         
-        # Verificar que la notificación pertenece al usuario actual
-        if notification.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to delete this notification"
-            )
+        # Verify permissions using centralized function
+        require_notification_access(current_user, notification)
         
         await NotificationRepository.delete(db, notification)
     

@@ -9,12 +9,13 @@ The test suite follows SOLID principles and clean architecture:
 ### Structure
 ```
 tests/
-├── conftest.py          # Pytest fixtures and configuration
-├── test_config.py       # Test-specific settings
-├── factories.py         # Factory classes for creating test data
-├── test_tasks.py        # Integration tests for task endpoints
-├── test_users.py        # Integration tests for user endpoints
-└── README.md           # This file
+├── conftest.py           # Pytest fixtures and configuration
+├── test_config.py        # Test-specific settings
+├── factories.py          # Factory classes for creating test data
+├── test_tasks.py         # Integration tests for task endpoints
+├── test_users.py         # Integration tests for user endpoints
+├── test_notifications.py # Integration tests for notification endpoints
+└── README.md            # This file
 ```
 
 ### Key Components
@@ -39,6 +40,7 @@ Factory classes for creating test data:
 - `TaskFactory`: Create tasks with various configurations
 - `CommentFactory`: Create comments on tasks
 - `UserFactory`: Create users with different roles and states
+- `NotificationFactory`: Create notifications with different types and states
 - `TestDataBuilder`: Build complex test scenarios with multiple entities
 
 #### 4. **Test Suites**
@@ -58,6 +60,15 @@ Integration tests for user management endpoints:
 - `TestListUsers`: GET /api/v1/users/ (role-based access)
 - `TestCreateUser`: POST /api/v1/users/ (owner-only)
 - `TestUserIntegrationScenarios`: Complete user lifecycle flows
+
+**Notification Tests** (`test_notifications.py`):
+Integration tests for notification endpoints:
+- `TestGetNotifications`: GET /api/v1/notifications/ (filtering, pagination)
+- `TestGetUnreadCount`: GET /api/v1/notifications/unread-count
+- `TestMarkNotificationAsRead`: PUT /api/v1/notifications/{id}/read
+- `TestDeleteNotification`: DELETE /api/v1/notifications/{id}
+- `TestCheckDueDates`: POST /api/v1/notifications/check-due-dates (owner-only)
+- `TestNotificationIntegrationScenarios`: Complex notification workflows
 
 ## Setup
 

@@ -474,8 +474,8 @@ class TestMarkNotificationAsRead:
             headers=auth_headers_member
         )
         
-        # Assert: Verify forbidden response
-        assert response.status_code == 403
+        # Assert: Verify not found response (404 to not leak notification existence)
+        assert response.status_code == 404
     
     async def test_mark_notification_as_read_requires_authentication(
         self,
@@ -607,8 +607,8 @@ class TestDeleteNotification:
             headers=auth_headers_member
         )
         
-        # Assert: Verify forbidden response
-        assert response.status_code == 403
+        # Assert: Verify not found response (404 to not leak notification existence)
+        assert response.status_code == 404
     
     async def test_delete_notification_requires_authentication(
         self,

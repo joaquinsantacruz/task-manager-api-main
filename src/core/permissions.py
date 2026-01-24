@@ -130,12 +130,12 @@ def require_comment_modification(user: User, comment: Comment) -> None:
         comment: The comment being modified
         
     Raises:
-        HTTPException: 403 if user cannot modify the comment
+        HTTPException: 404 if user cannot modify the comment
     """
     if not can_user_modify_comment(user, comment):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to edit this comment"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Comment not found"
         )
 
 
@@ -166,12 +166,12 @@ def require_comment_deletion(user: User, comment: Comment) -> None:
         comment: The comment being deleted
         
     Raises:
-        HTTPException: 403 if user cannot delete the comment
+        HTTPException: 404 if user cannot delete the comment
     """
     if not can_user_delete_comment(user, comment):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to delete this comment"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Comment not found"
         )
 
 
@@ -201,10 +201,10 @@ def require_notification_access(user: User, notification: Notification) -> None:
         notification: The notification being accessed
         
     Raises:
-        HTTPException: 403 if user cannot access the notification
+        HTTPException: 404 if user cannot access the notification
     """
     if not can_user_access_notification(user, notification):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to access this notification"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Notification not found"
         )

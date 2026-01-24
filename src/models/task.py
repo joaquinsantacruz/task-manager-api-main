@@ -17,6 +17,7 @@ class Task(Base):
     description = Column(Text, nullable=True)
     
     status = Column(SqEnum(TaskStatus), default=TaskStatus.TODO, nullable=False)
+    due_date = Column(DateTime(timezone=True), nullable=True)
     
     # Clave Foránea
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -26,8 +27,9 @@ class Task(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relación Inversa
-    # Usamos string path para evitar importaciones circulares
     owner = relationship("src.models.user.User", back_populates="tasks")
+    comments = relationship("src.models.comment.Comment", back_populates="task", cascade="all, delete-orphan")
+    notifications = relationship("src.models.notification.Notification", back_populates="task", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Task id={self.id} title={self.title} status={self.status}>"

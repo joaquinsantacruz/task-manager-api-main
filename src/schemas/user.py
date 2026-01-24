@@ -10,6 +10,12 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserCreateByOwner(BaseModel):
+    """Schema para que un owner cree nuevos usuarios"""
+    email: EmailStr
+    password: str
+    role: UserRole
+
 class UserResponse(UserBase):
     id: int
     created_at: datetime

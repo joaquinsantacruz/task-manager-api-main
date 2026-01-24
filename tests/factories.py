@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.task import Task, TaskStatus
 from src.models.user import User, UserRole
 from src.models.comment import Comment
+from src.models.notification import Notification, NotificationType
 from src.core.security import get_password_hash
 
 
@@ -521,4 +522,221 @@ class UserFactory:
             )
             users.append(user)
         return users
+
+
+class NotificationFactory:
+    """
+    Factory for creating Notification instances in tests.
+    
+    Provides a clean interface for creating notifications with sensible defaults
+    while allowing customization. Follows the Single Responsibility Principle -
+    only responsible for notification creation.
+    """
+    
+    @staticmethod
+    async def create_notification(
+        db_session: AsyncSession,
+        user: User,
+        task: Task,
+        message: str = "Test notification",
+        notification_type: NotificationType = NotificationType.DUE_SOON,
+        is_read: bool = False,
+        **kwargs
+    ) -> Notification:
+        """
+        Create a notification with the given parameters.
+        
+        This factory method provides a flexible way to create notifications
+        for testing. All parameters have defaults but can be overridden.
+        
+        Args:
+            db_session: Database session to use
+            user: User who will receive the notification
+            task: Task the notification is about
+            message: Notification message
+            notification_type: Type of notification
+            is_read: Whether notification has been read
+            **kwargs: Additional fields to set on the notification
+            
+        Returns:
+            Notification: The created notification instance
+            
+        Example:
+            notification = await NotificationFactory.create_notification(
+                db_session=db,
+                user=user,
+                task=task,
+                notification_type=NotificationType.OVERDUE
+            )
+        """
+        notification = Notification(
+            message=message,
+            notification_type=notification_type,
+            user_id=user.id,
+            task_id=task.id,
+            is_read=is_read,
+            **kwargs
+        )
+        db_session.add(notification)
+        await db_session.commit()
+        await db_session.refresh(notification)
+        return notification
+    
+    @staticmethod
+    async def create_due_today_notification(
+        db_session: AsyncSession,
+        user: User,
+        task: Task,
+        **kwargs
+    ) -> Notification:
+        """
+        Create a DUE_TODAY notification.
+        
+        Convenience method for creating due today notifications.
+        
+        Args:
+            db_session: Database session to use
+            user: User who will receive the notification
+            task: Task the notification is about
+            **kwargs: Additional fields to pass to create_notification
+            
+        Returns:
+            Notification: The created notification
+        """
+        return await NotificationFactory.create_notification(
+            db_session=db_session,
+            user=user,
+            task=task,
+            notification_type=NotificationType.DUE_TODAY,
+            message=f"La tarea '{task.title}' vence hoy",
+            **kwargs
+        )
+    
+    @staticmethod
+    async def create_due_soon_notification(
+        db_session: AsyncSession,
+        user: User,
+        task: Task,
+        **kwargs
+    ) -> Notification:
+        """
+        Create a DUE_SOON notification.
+        
+        Convenience method for creating due soon notifications.
+        
+        Args:
+            db_session: Database session to use
+            user: User who will receive the notification
+            task: Task the notification is about
+            **kwargs: Additional fields to pass to create_notification
+            
+        Returns:
+            Notification: The created notification
+        """
+        return await NotificationFactory.create_notification(
+            db_session=db_session,
+            user=user,
+            task=task,
+            notification_type=NotificationType.DUE_SOON,
+            message=f"La tarea '{task.title}' vence pronto",
+            **kwargs
+        )
+    
+    @staticmethod
+    async def create_overdue_notification(
+        db_session: AsyncSession,
+        user: User,
+        task: Task,
+        **kwargs
+    ) -> Notification:
+        """
+        Create an OVERDUE notification.
+        
+        Convenience method for creating overdue notifications.
+        
+        Args:
+            db_session: Database session to use
+            user: User who will receive the notification
+            task: Task the notification is about
+            **kwargs: Additional fields to pass to create_notification
+            
+        Returns:
+            Notification: The created notification
+        """
+        return await NotificationFactory.create_notification(
+            db_session=db_session,
+            user=user,
+            task=task,
+            notification_type=NotificationType.OVERDUE,
+            message=f"La tarea '{task.title}' está vencida",
+            **kwargs
+        )
+    
+    @staticmethod
+    async def create_read_notification(
+        db_session: AsyncSession,
+        user: User,
+        task: Task,
+        **kwargs
+    ) -> Notification:
+        """
+        Create a notification that has already been read.
+        
+        Useful for testing filters and counts.
+        
+        Args:
+            db_session: Database session to use
+            user: User who will receive the notification
+            task: Task the notification is about
+            **kwargs: Additional fields to pass to create_notification
+            
+        Returns:
+            Notification: The created read notification
+        """
+        return await NotificationFactory.create_notification(
+            db_session=db_session,
+            user=user,
+            task=task,
+            is_read=True,
+            **kwargs
+        )
+    
+    @staticmethod
+    async def create_multiple_notifications(
+        db_session: AsyncSession,
+        user: User,
+        task: Task,
+        count: int = 3,
+        notification_type: NotificationType = NotificationType.DUE_SOON,
+        **kwargs
+    ) -> list[Notification]:
+        """
+        Create multiple notifications at once.
+        
+        Useful for testing list endpoints and pagination.
+        
+        Args:
+            db_session: Database session to use
+            user: User who will receive the notifications
+            task: Task the notifications are about
+            count: Number of notifications to create
+            notification_type: Type for all notifications
+            **kwargs: Additional fields to pass to create_notification
+            
+        Returns:
+            list[Notification]: List of created notifications
+        """
+        notifications = []
+        for i in range(count):
+            notification = await NotificationFactory.create_notification(
+                db_session=db_session,
+                user=user,
+                task=task,
+                message=f"Test notification {i+1}",
+                notification_type=notification_type,
+                **kwargs
+            )
+            notifications.append(notification)
+        return notifications
+
 

@@ -1,14 +1,20 @@
-from typing import List, Annotated
+from typing import Annotated, List
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
 from src.api import deps
-from src.models.user import User
-from src.models.notification import Notification
-from src.schemas.notification import NotificationResponse
-from src.services.notification import NotificationService
 from src.core.constants import DEFAULT_PAGE_SIZE
+from src.core.permissions import require_owner_role
+from src.db.session import get_db
+from src.models.notification import Notification
+from src.models.user import User
+from src.schemas.notification import (
+    NotificationResponse,
+    UnreadCountResponse,
+    NotificationGenerationResponse
+)
+from src.services.notification import NotificationService
 
 router = APIRouter()
 
@@ -20,7 +26,7 @@ async def get_notifications(
     unread_only: bool = False,
     skip: int = 0,
     limit: int = DEFAULT_PAGE_SIZE,
-) -> List[NotificationResponse]:
+) -> List[Notification]:
     """
     Get all notifications for the current user.
     
@@ -29,34 +35,20 @@ async def get_notifications(
     - skip: Number of records to skip (pagination)
     - limit: Maximum number of records to return
     """
-    notifications = await NotificationService.get_user_notifications(
+    return await NotificationService.get_user_notifications(
         db=db,
         current_user=current_user,
         unread_only=unread_only,
         skip=skip,
         limit=limit
     )
-    
-    return [
-        NotificationResponse(
-            id=notif.id,
-            message=notif.message,
-            notification_type=notif.notification_type,
-            user_id=notif.user_id,
-            task_id=notif.task_id,
-            task_title=notif.task.title if notif.task else None,
-            is_read=notif.is_read,
-            created_at=notif.created_at
-        )
-        for notif in notifications
-    ]
 
 
-@router.get("/unread-count", response_model=dict)
+@router.get("/unread-count", response_model=UnreadCountResponse)
 async def get_unread_count(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
-) -> dict:
+) -> UnreadCountResponse:
     """
     Get the count of unread notifications for the current user.
     """
@@ -64,7 +56,7 @@ async def get_unread_count(
         db=db,
         current_user=current_user
     )
-    return {"unread_count": count}
+    return UnreadCountResponse(unread_count=count)
 
 
 @router.put("/{notification_id}/read", response_model=NotificationResponse)
@@ -72,25 +64,14 @@ async def mark_notification_as_read(
     notification_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
-) -> NotificationResponse:
+) -> Notification:
     """
     Mark a notification as read.
     """
-    notification = await NotificationService.mark_notification_as_read(
+    return await NotificationService.mark_notification_as_read(
         db=db,
         notification_id=notification_id,
         current_user=current_user
-    )
-    
-    return NotificationResponse(
-        id=notification.id,
-        message=notification.message,
-        notification_type=notification.notification_type,
-        user_id=notification.user_id,
-        task_id=notification.task_id,
-        task_title=notification.task.title if notification.task else None,
-        is_read=notification.is_read,
-        created_at=notification.created_at
     )
 
 
@@ -110,11 +91,11 @@ async def delete_notification(
     )
 
 
-@router.post("/check-due-dates", response_model=dict)
+@router.post("/check-due-dates", response_model=NotificationGenerationResponse)
 async def check_due_dates(
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(deps.get_current_owner)],
-) -> dict:
+    current_user: Annotated[User, Depends(deps.get_current_user)],
+) -> NotificationGenerationResponse:
     """
     Generate notifications for tasks with upcoming or overdue dates.
     Only users with OWNER role can execute this function.
@@ -126,10 +107,12 @@ async def check_due_dates(
     
     In production, this should run automatically with a scheduler.
     """
+    require_owner_role(current_user)
+    
     notifications_created = await NotificationService.generate_due_date_notifications(db)
     
-    return {
-        "message": "Notificaciones generadas exitosamente",
-        "notifications_created": notifications_created,
-        "total": sum(notifications_created.values())
-    }
+    return NotificationGenerationResponse(
+        message="Notifications generated successfully",
+        notifications_created=notifications_created,
+        total=sum(notifications_created.values())
+    )

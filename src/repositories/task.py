@@ -87,10 +87,22 @@ class TaskRepository:
             .where(Task.id == db_obj.id)
         )
         return result.one()
-        return db_obj
 
     @staticmethod
     async def delete(db: AsyncSession, db_obj: Task) -> None:
         """Delete the task."""
         await db.delete(db_obj)
         await db.commit()
+
+    @staticmethod
+    async def change_owner(db: AsyncSession, task: Task, new_owner_id: int) -> Task:
+        """Change the owner of a task."""
+        task.owner_id = new_owner_id
+        db.add(task)
+        await db.commit()
+        await db.refresh(task)
+        
+        # Load the owner relationship
+        await db.refresh(task, ["owner"])
+        
+        return task

@@ -1,14 +1,16 @@
-from typing import List, Annotated
+from typing import Annotated, List
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
 from src.api import deps
-from src.models.user import User, UserRole
-from src.schemas.user import UserResponse, UserCreateByOwner
-from src.repositories.user import UserRepository
-from src.services.user import UserService
 from src.core.constants import DEFAULT_PAGE_SIZE
+from src.core.permissions import require_owner_role
+from src.db.session import get_db
+from src.models.user import User
+from src.schemas.user import UserResponse, UserCreateByOwner
+from src.services.user import UserService
+
 
 router = APIRouter()
 
@@ -31,18 +33,18 @@ async def read_users(
     """
     Get list of users (OWNER role only).
     """
-    # Only OWNER can see the full user list
-    if current_user.role != UserRole.OWNER:
-        # If not owner, only return current user
-        return [current_user]
-    
-    return await UserRepository.get_all(db=db, skip=skip, limit=limit)
+    return await UserService.get_users(
+        db=db, 
+        current_user=current_user, 
+        skip=skip, 
+        limit=limit
+    )
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
-    user_data: UserCreateByOwner,
+    user_in: UserCreateByOwner,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_owner: Annotated[User, Depends(deps.get_current_owner)],
+    current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> User:
     """
     Create a new user (OWNER role only).
@@ -53,5 +55,7 @@ async def create_user(
     - password: Password of the new user
     - role: Role of the new user (owner or member)
     """
-    return await UserService.create_user_by_owner(db=db, user_data=user_data)
+    require_owner_role(current_user)
+    
+    return await UserService.create_user_by_owner(db=db, user_data=user_in)
 

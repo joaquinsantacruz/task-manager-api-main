@@ -11,6 +11,7 @@ from src.models.user import User
 from src.repositories.notification import NotificationRepository
 from src.core.permissions import require_notification_access
 from src.core.constants import DEFAULT_PAGE_SIZE
+from src.core.errors import ERROR_NOTIFICATION_NOT_FOUND
 
 
 class NotificationService:
@@ -59,7 +60,7 @@ class NotificationService:
         if not notification:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Notification not found"
+                detail=ERROR_NOTIFICATION_NOT_FOUND
             )
         
         # Verify permissions using centralized function
@@ -82,7 +83,7 @@ class NotificationService:
         if not notification:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Notification not found"
+                detail=ERROR_NOTIFICATION_NOT_FOUND
             )
         
         # Verify permissions using centralized function
@@ -121,7 +122,7 @@ class NotificationService:
         tasks = list(result.all())
         
         for task in tasks:
-            # Asegurar que due_date es timezone-aware
+
             task_due_date = task.due_date
             if task_due_date.tzinfo is None:
                 task_due_date = task_due_date.replace(tzinfo=timezone.utc)

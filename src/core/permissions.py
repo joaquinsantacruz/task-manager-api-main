@@ -10,7 +10,13 @@ from src.models.user import User, UserRole
 from src.models.task import Task
 from src.models.comment import Comment
 from src.models.notification import Notification
-
+from src.core.errors import (
+    ERROR_OWNER_ROLE_REQUIRED,
+    ERROR_NO_TASK_ACCESS,
+    ERROR_TASK_NOT_FOUND,
+    ERROR_COMMENT_NOT_FOUND,
+    ERROR_NOTIFICATION_NOT_FOUND
+)
 
 def require_owner_role(user: User) -> None:
     """
@@ -25,7 +31,7 @@ def require_owner_role(user: User) -> None:
     if user.role != UserRole.OWNER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="This action requires OWNER role"
+            detail=ERROR_OWNER_ROLE_REQUIRED
         )
 
 
@@ -61,7 +67,7 @@ def require_task_access(user: User, task: Task) -> None:
     if not can_user_access_task(user, task):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to access this task"
+            detail=ERROR_NO_TASK_ACCESS
         )
 
 
@@ -100,7 +106,7 @@ def require_task_modification(user: User, task: Task) -> None:
     if not can_user_modify_task(user, task):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found"
+            detail=ERROR_TASK_NOT_FOUND
         )
 
 
@@ -135,7 +141,7 @@ def require_comment_modification(user: User, comment: Comment) -> None:
     if not can_user_modify_comment(user, comment):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Comment not found"
+            detail=ERROR_COMMENT_NOT_FOUND
         )
 
 
@@ -171,7 +177,7 @@ def require_comment_deletion(user: User, comment: Comment) -> None:
     if not can_user_delete_comment(user, comment):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Comment not found"
+            detail=ERROR_COMMENT_NOT_FOUND
         )
 
 
@@ -206,5 +212,5 @@ def require_notification_access(user: User, notification: Notification) -> None:
     if not can_user_access_notification(user, notification):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Notification not found"
+            detail=ERROR_NOTIFICATION_NOT_FOUND
         )

@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TaskService } from '../services/taskService';
-import { Task, TaskStatus } from '../types';
-import TaskFormModal from '../components/TaskFormModal';
-import TaskDetailModal from '../components/TaskDetailModal';
-import TaskList from '../components/TaskList';
-import TaskFilter from '../components/TaskFilter';
+import { Task, TaskStatus, CreateTaskDTO } from '../types';
+import { TaskFormModal, TaskDetailModal, TaskList, TaskFilter } from '../components/tasks';
 import { useTaskFilter } from '../hooks/useTaskFilter';
 
 const STATUS_ROTATION: Record<TaskStatus, TaskStatus> = {
@@ -34,9 +31,9 @@ export default function Tasks() {
     fetchTasks();
   }, []);
 
-  const handleCreateTask = async (title: string, description: string, status: TaskStatus) => {
+  const handleCreateTask = async (taskData: CreateTaskDTO) => {
     try {
-      await TaskService.create(title, description, status);
+      await TaskService.create(taskData);
       fetchTasks();
     } catch (error) {
       console.error("Error creating task", error);
@@ -77,6 +74,26 @@ export default function Tasks() {
       setIsDetailModalOpen(false);
     } catch (error) {
       console.error("Error changing task owner", error);
+    }
+  };
+
+  const handleChangeDueDate = async (taskId: number, newDueDate: string | null) => {
+    try {
+      // Convert YYYY-MM-DD to ISO datetime format (set to noon UTC to avoid timezone issues)
+      let formattedDate: string | undefined = undefined;
+      
+      if (newDueDate) {
+        const date = new Date(newDueDate);
+        // Set to noon UTC to avoid timezone issues
+        date.setUTCHours(12, 0, 0, 0);
+        formattedDate = date.toISOString();
+      }
+      
+      await TaskService.update(taskId, { due_date: formattedDate });
+      fetchTasks();
+      setIsDetailModalOpen(false);
+    } catch (error) {
+      console.error("Error changing due date", error);
     }
   };
 
@@ -123,6 +140,7 @@ export default function Tasks() {
         task={selectedTask}
         onChangeStatus={handleChangeStatus}
         onChangeOwner={handleChangeOwner}
+        onChangeDueDate={handleChangeDueDate}
       />
 
       <TaskFilter 

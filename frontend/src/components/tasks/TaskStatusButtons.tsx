@@ -1,4 +1,4 @@
-import { TaskStatus } from '../types';
+import { TaskStatus } from '../../types';
 
 interface TaskStatusButtonsProps {
   currentStatus: TaskStatus;

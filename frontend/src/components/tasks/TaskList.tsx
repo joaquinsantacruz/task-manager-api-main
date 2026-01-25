@@ -1,5 +1,5 @@
-import { Task } from '../types';
-import TaskItem from './TaskItem';
+import { Task } from '../../types';
+import { TaskItem } from './';
 
 interface TaskListProps {
   tasks: Task[];

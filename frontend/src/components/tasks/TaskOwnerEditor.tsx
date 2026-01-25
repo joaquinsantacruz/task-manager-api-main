@@ -1,4 +1,4 @@
-import { User } from '../types';
+import { User } from '../../types';
 
 interface TaskOwnerEditorProps {
   ownerEmail: string;
@@ -30,7 +30,7 @@ export default function TaskOwnerEditor({
   return (
     <div>
       <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#666', fontSize: '0.875rem' }}>
-        PROPIETARIO
+        RESPONSABLE
       </label>
       {!isEditing ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>

@@ -1,9 +1,11 @@
-import Modal from './Modal';
-import TaskOwnerEditor from './TaskOwnerEditor';
-import TaskStatusButtons from './TaskStatusButtons';
-import { Task, TaskStatus } from '../types';
-import { useAuth } from '../context/AuthContext';
-import { useTaskOwnerEditor } from '../hooks/useTaskOwnerEditor';
+import { Modal } from '../common';
+import { TaskOwnerEditor, TaskDueDateEditor, TaskStatusButtons } from './';
+import { CommentForm, CommentList } from '../comments';
+import { Task, TaskStatus } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { useTaskOwnerEditor } from '../../hooks/useTaskOwnerEditor';
+import { useTaskDueDateEditor } from '../../hooks/useTaskDueDateEditor';
+import { useComments } from '../../hooks/useComments';
 
 interface TaskDetailModalProps {
   isOpen: boolean;
@@ -11,15 +13,19 @@ interface TaskDetailModalProps {
   task: Task | null;
   onChangeStatus?: (taskId: number, newStatus: TaskStatus) => void;
   onChangeOwner?: (taskId: number, newOwnerId: number) => void;
+  onChangeDueDate?: (taskId: number, newDueDate: string | null) => void;
 }
 
-export default function TaskDetailModal({ isOpen, onClose, task, onChangeStatus, onChangeOwner }: TaskDetailModalProps) {
+export default function TaskDetailModal({ isOpen, onClose, task, onChangeStatus, onChangeOwner, onChangeDueDate }: TaskDetailModalProps) {
   const { user: authUser } = useAuth();
   const ownerEditor = useTaskOwnerEditor(task?.owner_id || null);
+  const dueDateEditor = useTaskDueDateEditor(task?.due_date);
+  const { comments, loading: commentsLoading, createComment, updateComment, deleteComment } = useComments(task?.id || null, isOpen);
   
   if (!task) return null;
 
   const isOwnerRole = authUser?.user?.role === 'owner';
+  const currentUserId = authUser?.user?.id || 0;
 
   const statusLabels = {
     'todo': 'Por Hacer',
@@ -37,6 +43,14 @@ export default function TaskDetailModal({ isOpen, onClose, task, onChangeStatus,
     if (onChangeOwner) {
       ownerEditor.saveOwner((newOwnerId) => {
         onChangeOwner(task.id, newOwnerId);
+      });
+    }
+  };
+
+  const handleSaveDueDate = () => {
+    if (onChangeDueDate) {
+      dueDateEditor.saveDueDate((newDueDate) => {
+        onChangeDueDate(task.id, newDueDate);
       });
     }
   };
@@ -67,6 +81,17 @@ export default function TaskDetailModal({ isOpen, onClose, task, onChangeStatus,
           <p style={{ margin: 0 }}>{statusLabels[task.status]}</p>
         </div>
 
+        <TaskDueDateEditor
+          dueDate={task.due_date}
+          isOwnerRole={isOwnerRole}
+          isEditing={dueDateEditor.isEditing}
+          selectedDate={dueDateEditor.selectedDate}
+          onStartEdit={dueDateEditor.startEditing}
+          onCancelEdit={dueDateEditor.cancelEditing}
+          onSaveEdit={handleSaveDueDate}
+          onDateChange={dueDateEditor.setSelectedDate}
+        />
+
         <TaskOwnerEditor
           ownerEmail={task.owner_email || 'Sin asignar'}
           isOwnerRole={isOwnerRole}
@@ -81,7 +106,19 @@ export default function TaskDetailModal({ isOpen, onClose, task, onChangeStatus,
           onSelectOwner={ownerEditor.setSelectedOwnerId}
         />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+        <div style={{ borderTop: '2px solid #eee', paddingTop: '1.5rem' }}>
+          <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#333' }}>Comentarios</h3>
+          <CommentForm onSubmit={createComment} />
+          <CommentList
+            comments={comments}
+            currentUserId={currentUserId}
+            loading={commentsLoading}
+            onUpdate={updateComment}
+            onDelete={deleteComment}
+          />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>
           <TaskStatusButtons currentStatus={task.status} onStatusChange={handleStatusChange} />
 
           <button

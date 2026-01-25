@@ -49,7 +49,7 @@ async def create_comment(
     return await CommentService.create_comment(
         db=db,
         task_id=task_id,
-        comment_data=comment_in,
+        comment_in=comment_in,
         current_user=current_user
     )
 
@@ -68,7 +68,7 @@ async def update_comment(
     return await CommentService.update_comment(
         db=db,
         comment_id=comment_id,
-        comment_data=comment_in,
+        comment_in=comment_in,
         current_user=current_user
     )
 

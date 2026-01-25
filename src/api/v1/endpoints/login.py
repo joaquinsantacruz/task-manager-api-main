@@ -10,6 +10,7 @@ from src.core.config import settings
 from src.db.session import get_db
 from src.repositories.user import UserRepository
 from src.schemas.token import Token
+from src.core.errors import ERROR_INCORRECT_EMAIL_OR_PASSWORD, ERROR_INACTIVE_USER
 
 router = APIRouter()
 
@@ -26,12 +27,12 @@ async def login_access_token(
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail=ERROR_INCORRECT_EMAIL_OR_PASSWORD,
             headers={"WWW-Authenticate": "Bearer"},
         )
     
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ERROR_INACTIVE_USER)
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(

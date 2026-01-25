@@ -1,9 +1,12 @@
-from typing import List, Annotated
+from typing import Annotated, List
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
 from src.api import deps
+from src.core.constants import DEFAULT_PAGE_SIZE
+from src.db.session import get_db
+from src.models.comment import Comment
 from src.models.user import User
 from src.schemas.comment import CommentCreate, CommentUpdate, CommentResponse
 from src.services.comment import CommentService
@@ -17,11 +20,11 @@ async def get_task_comments(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
     skip: int = 0,
-    limit: int = 100,
-) -> List[CommentResponse]:
+    limit: int = DEFAULT_PAGE_SIZE,
+) -> List[Comment]:
     """
-    Obtener todos los comentarios de una tarea.
-    Solo el owner de la tarea o usuarios OWNER pueden ver los comentarios.
+    Get all comments for a task.
+    Only task owner or users with OWNER role can view comments.
     """
     return await CommentService.get_task_comments(
         db=db,
@@ -35,18 +38,18 @@ async def get_task_comments(
 @router.post("/{task_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
 async def create_comment(
     task_id: int,
-    comment_data: CommentCreate,
+    comment_in: CommentCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
-) -> CommentResponse:
+) -> Comment:
     """
-    Crear un comentario en una tarea.
-    Solo el owner de la tarea o usuarios OWNER pueden comentar.
+    Create a comment on a task.
+    Only task owner or users with OWNER role can comment.
     """
     return await CommentService.create_comment(
         db=db,
         task_id=task_id,
-        comment_data=comment_data,
+        comment_in=comment_in,
         current_user=current_user
     )
 
@@ -54,18 +57,18 @@ async def create_comment(
 @router.put("/comments/{comment_id}", response_model=CommentResponse)
 async def update_comment(
     comment_id: int,
-    comment_data: CommentUpdate,
+    comment_in: CommentUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
-) -> CommentResponse:
+) -> Comment:
     """
-    Actualizar un comentario.
-    Solo el autor del comentario puede editarlo.
+    Update a comment.
+    Only the comment author can edit it.
     """
     return await CommentService.update_comment(
         db=db,
         comment_id=comment_id,
-        comment_data=comment_data,
+        comment_in=comment_in,
         current_user=current_user
     )
 
@@ -77,8 +80,8 @@ async def delete_comment(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> None:
     """
-    Eliminar un comentario.
-    Solo el autor del comentario o un OWNER pueden eliminarlo.
+    Delete a comment.
+    Only the comment author or users with OWNER role can delete it.
     """
     await CommentService.delete_comment(
         db=db,

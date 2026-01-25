@@ -5,13 +5,14 @@ from sqlalchemy.orm import joinedload
 
 from src.models.comment import Comment
 from src.schemas.comment import CommentCreate, CommentUpdate
+from src.core.constants import DEFAULT_PAGE_SIZE
 
 
 class CommentRepository:
     
     @staticmethod
     async def get_by_id(db: AsyncSession, comment_id: int) -> Optional[Comment]:
-        """Obtiene un comentario por su ID, incluyendo el autor."""
+        """Gets a comment by its ID, including the author."""
         result = await db.scalars(
             select(Comment)
             .options(joinedload(Comment.author))
@@ -20,8 +21,8 @@ class CommentRepository:
         return result.one_or_none()
     
     @staticmethod
-    async def get_by_task(db: AsyncSession, task_id: int, skip: int = 0, limit: int = 100) -> List[Comment]:
-        """Obtiene todos los comentarios de una tarea, ordenados por fecha de creación."""
+    async def get_by_task(db: AsyncSession, task_id: int, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE) -> List[Comment]:
+        """Gets all comments for a task, ordered by creation date."""
         result = await db.scalars(
             select(Comment)
             .options(joinedload(Comment.author))
@@ -34,7 +35,7 @@ class CommentRepository:
     
     @staticmethod
     async def create(db: AsyncSession, task_id: int, author_id: int, comment_in: CommentCreate) -> Comment:
-        """Crea un nuevo comentario en una tarea."""
+        """Creates a new comment on a task."""
         db_comment = Comment(
             content=comment_in.content,
             task_id=task_id,
@@ -44,7 +45,7 @@ class CommentRepository:
         await db.commit()
         await db.refresh(db_comment)
         
-        # Cargar la relación del autor
+        # Load the author relationship
         result = await db.scalars(
             select(Comment)
             .options(joinedload(Comment.author))
@@ -54,12 +55,12 @@ class CommentRepository:
     
     @staticmethod
     async def update(db: AsyncSession, comment: Comment, comment_in: CommentUpdate) -> Comment:
-        """Actualiza el contenido de un comentario."""
+        """Updates the content of a comment."""
         comment.content = comment_in.content
         await db.commit()
         await db.refresh(comment)
         
-        # Cargar la relación del autor
+        # Load the author relationship
         result = await db.scalars(
             select(Comment)
             .options(joinedload(Comment.author))
@@ -69,6 +70,6 @@ class CommentRepository:
     
     @staticmethod
     async def delete(db: AsyncSession, comment: Comment) -> None:
-        """Elimina un comentario."""
+        """Deletes a comment."""
         await db.delete(comment)
         await db.commit()

@@ -593,8 +593,8 @@ class TestUpdateComment:
             headers=auth_headers_member
         )
         
-        # Assert: Verify forbidden response
-        assert response.status_code == 403
+        # Assert: Verify not found response (404 to not leak comment existence)
+        assert response.status_code == 404
     
     async def test_update_comment_not_found(
         self,
@@ -811,8 +811,8 @@ class TestDeleteComment:
             headers=auth_headers_member
         )
         
-        # Assert: Verify forbidden response
-        assert response.status_code == 403
+        # Assert: Verify not found response (404 to not leak comment existence)
+        assert response.status_code == 404
     
     async def test_delete_comment_not_found(
         self,

@@ -1,11 +1,19 @@
-from typing import List, Annotated
+from typing import Annotated, List
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
 from src.api import deps
+from src.core.constants import DEFAULT_PAGE_SIZE
+from src.core.permissions import require_owner_role
+from src.db.session import get_db
+from src.models.notification import Notification
 from src.models.user import User
-from src.schemas.notification import NotificationResponse
+from src.schemas.notification import (
+    NotificationResponse,
+    UnreadCountResponse,
+    NotificationGenerationResponse
+)
 from src.services.notification import NotificationService
 
 router = APIRouter()
@@ -17,15 +25,15 @@ async def get_notifications(
     current_user: Annotated[User, Depends(deps.get_current_user)],
     unread_only: bool = False,
     skip: int = 0,
-    limit: int = 100,
-) -> List[NotificationResponse]:
+    limit: int = DEFAULT_PAGE_SIZE,
+) -> List[Notification]:
     """
-    Obtener todas las notificaciones del usuario actual.
+    Get all notifications for the current user.
     
-    Parámetros:
-    - unread_only: Si es True, solo devuelve notificaciones no leídas
-    - skip: Número de registros a saltar (paginación)
-    - limit: Número máximo de registros a devolver
+    Parameters:
+    - unread_only: If True, only returns unread notifications
+    - skip: Number of records to skip (pagination)
+    - limit: Maximum number of records to return
     """
     return await NotificationService.get_user_notifications(
         db=db,
@@ -36,19 +44,19 @@ async def get_notifications(
     )
 
 
-@router.get("/unread-count", response_model=dict)
+@router.get("/unread-count", response_model=UnreadCountResponse)
 async def get_unread_count(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
-) -> dict:
+) -> UnreadCountResponse:
     """
-    Obtener el número de notificaciones no leídas del usuario actual.
+    Get the count of unread notifications for the current user.
     """
     count = await NotificationService.count_unread_notifications(
         db=db,
         current_user=current_user
     )
-    return {"unread_count": count}
+    return UnreadCountResponse(unread_count=count)
 
 
 @router.put("/{notification_id}/read", response_model=NotificationResponse)
@@ -56,9 +64,9 @@ async def mark_notification_as_read(
     notification_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
-) -> NotificationResponse:
+) -> Notification:
     """
-    Marcar una notificación como leída.
+    Mark a notification as read.
     """
     return await NotificationService.mark_notification_as_read(
         db=db,
@@ -74,7 +82,7 @@ async def delete_notification(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> None:
     """
-    Eliminar una notificación.
+    Delete a notification.
     """
     await NotificationService.delete_notification(
         db=db,
@@ -83,26 +91,28 @@ async def delete_notification(
     )
 
 
-@router.post("/check-due-dates", response_model=dict)
+@router.post("/check-due-dates", response_model=NotificationGenerationResponse)
 async def check_due_dates(
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[User, Depends(deps.get_current_owner)],
-) -> dict:
+    current_user: Annotated[User, Depends(deps.get_current_user)],
+) -> NotificationGenerationResponse:
     """
-    Generar notificaciones para tareas con fechas de vencimiento.
-    Solo usuarios OWNER pueden ejecutar esta función.
+    Generate notifications for tasks with upcoming or overdue dates.
+    Only users with OWNER role can execute this function.
     
-    Esta función revisa todas las tareas y genera notificaciones para:
-    - Tareas que vencen hoy
-    - Tareas que vencen en las próximas 24 horas
-    - Tareas vencidas y no completadas
+    This function reviews all tasks and generates notifications for:
+    - Tasks due today
+    - Tasks due in the next 24 hours
+    - Overdue and incomplete tasks
     
-    En producción, esto debería ejecutarse automáticamente con un scheduler.
+    In production, this should run automatically with a scheduler.
     """
+    require_owner_role(current_user)
+    
     notifications_created = await NotificationService.generate_due_date_notifications(db)
     
-    return {
-        "message": "Notificaciones generadas exitosamente",
-        "notifications_created": notifications_created,
-        "total": sum(notifications_created.values())
-    }
+    return NotificationGenerationResponse(
+        message="Notifications generated successfully",
+        notifications_created=notifications_created,
+        total=sum(notifications_created.values())
+    )

@@ -5,11 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from src.models.notification import NotificationType
+from src.models.notification import Notification, NotificationType
 from src.models.task import Task, TaskStatus
 from src.models.user import User
-from src.schemas.notification import NotificationResponse
 from src.repositories.notification import NotificationRepository
+from src.core.permissions import require_notification_access
+from src.core.constants import DEFAULT_PAGE_SIZE
+from src.core.errors import ERROR_NOTIFICATION_NOT_FOUND
 
 
 class NotificationService:
@@ -20,32 +22,18 @@ class NotificationService:
         current_user: User,
         unread_only: bool = False,
         skip: int = 0,
-        limit: int = 100
-    ) -> List[NotificationResponse]:
+        limit: int = DEFAULT_PAGE_SIZE
+    ) -> List[Notification]:
         """
-        Obtiene las notificaciones de un usuario.
+        Gets notifications for a user.
         """
-        notifications = await NotificationRepository.get_user_notifications(
+        return await NotificationRepository.get_user_notifications(
             db=db,
             user_id=current_user.id,
             unread_only=unread_only,
             skip=skip,
             limit=limit
         )
-        
-        return [
-            NotificationResponse(
-                id=notif.id,
-                message=notif.message,
-                notification_type=notif.notification_type,
-                user_id=notif.user_id,
-                task_id=notif.task_id,
-                task_title=notif.task.title if notif.task else None,
-                is_read=notif.is_read,
-                created_at=notif.created_at
-            )
-            for notif in notifications
-        ]
     
     @staticmethod
     async def count_unread_notifications(
@@ -53,7 +41,7 @@ class NotificationService:
         current_user: User
     ) -> int:
         """
-        Cuenta las notificaciones no leídas de un usuario.
+        Counts unread notifications for a user.
         """
         return await NotificationRepository.count_unread(db, current_user.id)
     
@@ -62,38 +50,23 @@ class NotificationService:
         db: AsyncSession,
         notification_id: int,
         current_user: User
-    ) -> NotificationResponse:
+    ) -> Notification:
         """
-        Marca una notificación como leída.
-        Solo el propietario de la notificación puede marcarla como leída.
+        Mark a notification as read.
+        Only the notification owner can mark it as read.
         """
         notification = await NotificationRepository.get_by_id(db, notification_id)
         
         if not notification:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Notificación no encontrada"
+                detail=ERROR_NOTIFICATION_NOT_FOUND
             )
         
-        # Verificar que la notificación pertenece al usuario actual
-        if notification.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permisos para modificar esta notificación"
-            )
+        # Verify permissions using centralized function
+        require_notification_access(current_user, notification)
         
-        updated_notification = await NotificationRepository.mark_as_read(db, notification)
-        
-        return NotificationResponse(
-            id=updated_notification.id,
-            message=updated_notification.message,
-            notification_type=updated_notification.notification_type,
-            user_id=updated_notification.user_id,
-            task_id=updated_notification.task_id,
-            task_title=updated_notification.task.title if updated_notification.task else None,
-            is_read=updated_notification.is_read,
-            created_at=updated_notification.created_at
-        )
+        return await NotificationRepository.mark_as_read(db, notification)
     
     @staticmethod
     async def delete_notification(
@@ -102,36 +75,32 @@ class NotificationService:
         current_user: User
     ) -> None:
         """
-        Elimina una notificación.
-        Solo el propietario de la notificación puede eliminarla.
+        Delete a notification.
+        Only the notification owner can delete it.
         """
         notification = await NotificationRepository.get_by_id(db, notification_id)
         
         if not notification:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Notificación no encontrada"
+                detail=ERROR_NOTIFICATION_NOT_FOUND
             )
         
-        # Verificar que la notificación pertenece al usuario actual
-        if notification.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permisos para eliminar esta notificación"
-            )
+        # Verify permissions using centralized function
+        require_notification_access(current_user, notification)
         
         await NotificationRepository.delete(db, notification)
     
     @staticmethod
     async def generate_due_date_notifications(db: AsyncSession) -> dict:
         """
-        Genera notificaciones para tareas con fechas de vencimiento próximas o vencidas.
-        Esta función debe ser llamada periódicamente (ej: cada hora o mediante un endpoint manual).
+        Generates notifications for tasks with approaching or overdue due dates.
+        This function should be called periodically (e.g., every hour or via a manual endpoint).
         
-        Lógica:
-        - Tareas que vencen hoy → notificación "due_today"
-        - Tareas que vencen en las próximas 24 horas → notificación "due_soon"
-        - Tareas vencidas y no completadas → notificación "overdue"
+        Logic:
+        - Tasks due today → "due_today" notification
+        - Tasks due in the next 24 hours → "due_soon" notification
+        - Overdue and incomplete tasks → "overdue" notification
         """
         now = datetime.now(timezone.utc)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -143,7 +112,7 @@ class NotificationService:
             "overdue": 0
         }
         
-        # Obtener todas las tareas con due_date que no están completadas
+        # Get all tasks with due_date that are not completed
         result = await db.scalars(
             select(Task)
             .options(joinedload(Task.owner))
@@ -153,14 +122,14 @@ class NotificationService:
         tasks = list(result.all())
         
         for task in tasks:
-            # Asegurar que due_date es timezone-aware
+
             task_due_date = task.due_date
             if task_due_date.tzinfo is None:
                 task_due_date = task_due_date.replace(tzinfo=timezone.utc)
             
-            # Tarea vencida
+            # Overdue task
             if task_due_date < now:
-                # Verificar si ya existe una notificación de overdue
+                # Check if an overdue notification already exists
                 exists = await NotificationRepository.exists_for_task_and_type(
                     db, task.id, NotificationType.OVERDUE
                 )
@@ -170,11 +139,11 @@ class NotificationService:
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.OVERDUE,
-                        message=f"La tarea '{task.title}' está vencida"
+                        message=f"Task '{task.title}' is overdue"
                     )
                     notifications_created["overdue"] += 1
             
-            # Tarea vence hoy
+            # Task due today
             elif now <= task_due_date <= today_end:
                 exists = await NotificationRepository.exists_for_task_and_type(
                     db, task.id, NotificationType.DUE_TODAY
@@ -185,11 +154,11 @@ class NotificationService:
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.DUE_TODAY,
-                        message=f"La tarea '{task.title}' vence hoy"
+                        message=f"Task '{task.title}' is due today"
                     )
                     notifications_created["due_today"] += 1
             
-            # Tarea vence en las próximas 24 horas
+            # Task due in the next 24 hours
             elif today_end < task_due_date <= tomorrow_end:
                 exists = await NotificationRepository.exists_for_task_and_type(
                     db, task.id, NotificationType.DUE_SOON
@@ -200,7 +169,7 @@ class NotificationService:
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.DUE_SOON,
-                        message=f"La tarea '{task.title}' vence pronto"
+                        message=f"Task '{task.title}' is due soon"
                     )
                     notifications_created["due_soon"] += 1
         

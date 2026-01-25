@@ -445,9 +445,10 @@ class TestCreateUser:
         )
         
         # Assert: Verify error response
+        # Note: Generic error message to prevent email enumeration attacks
         assert response.status_code == 400
         assert "detail" in response.json()
-        assert "email" in response.json()["detail"].lower()
+        assert response.json()["detail"] == "Invalid user data"
     
     async def test_create_user_requires_owner_role(
         self,

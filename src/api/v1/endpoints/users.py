@@ -1,13 +1,16 @@
-from typing import List, Annotated
+from typing import Annotated, List
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
 from src.api import deps
-from src.models.user import User, UserRole
+from src.core.constants import DEFAULT_PAGE_SIZE
+from src.core.permissions import require_owner_role
+from src.db.session import get_db
+from src.models.user import User
 from src.schemas.user import UserResponse, UserCreateByOwner
-from src.repositories.user import UserRepository
 from src.services.user import UserService
+
 
 router = APIRouter()
 
@@ -16,7 +19,7 @@ async def read_current_user(
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> User:
     """
-    Obtener información del usuario actual.
+    Get current user information.
     """
     return current_user
 
@@ -25,32 +28,34 @@ async def read_users(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
     skip: int = 0,
-    limit: int = 100,
+    limit: int = DEFAULT_PAGE_SIZE,
 ) -> List[User]:
     """
-    Obtener lista de usuarios (solo para OWNER).
+    Get list of users (OWNER role only).
     """
-    # Solo los OWNER pueden ver la lista de usuarios
-    if current_user.role != UserRole.OWNER:
-        # Si no es owner, solo retornar el usuario actual
-        return [current_user]
-    
-    return await UserRepository.get_all(db=db, skip=skip, limit=limit)
+    return await UserService.get_users(
+        db=db, 
+        current_user=current_user, 
+        skip=skip, 
+        limit=limit
+    )
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
-    user_data: UserCreateByOwner,
+    user_in: UserCreateByOwner,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_owner: Annotated[User, Depends(deps.get_current_owner)],
+    current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> User:
     """
-    Crear un nuevo usuario (solo para OWNER).
+    Create a new user (OWNER role only).
     
-    Permite a un usuario con rol de OWNER crear nuevos usuarios.
-    Se debe proporcionar:
-    - email: Email del nuevo usuario
-    - password: Contraseña del nuevo usuario
-    - role: Rol del nuevo usuario (owner o member)
+    Allows a user with OWNER role to create new users.
+    Required fields:
+    - email: Email of the new user
+    - password: Password of the new user
+    - role: Role of the new user (owner or member)
     """
-    return await UserService.create_user_by_owner(db=db, user_data=user_data)
+    require_owner_role(current_user)
+    
+    return await UserService.create_user_by_owner(db=db, user_data=user_in)
 

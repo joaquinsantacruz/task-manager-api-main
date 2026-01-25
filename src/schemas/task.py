@@ -1,22 +1,56 @@
 from typing import Optional, Any
-from datetime import datetime
-from pydantic import BaseModel, ConfigDict, model_validator
+from datetime import datetime, timezone
+from pydantic import BaseModel, ConfigDict, model_validator, field_validator, Field
 from src.models.task import TaskStatus
+from src.core.constants import (
+    TASK_TITLE_MIN_LENGTH,
+    TASK_TITLE_MAX_LENGTH,
+    TASK_DESCRIPTION_MAX_LENGTH
+)
+from src.schemas.validators import validate_due_date_not_past
 
 class TaskBase(BaseModel):
-    title: str
-    description: Optional[str] = None
+    title: str = Field(
+        min_length=TASK_TITLE_MIN_LENGTH,
+        max_length=TASK_TITLE_MAX_LENGTH,
+        description=f"Task title ({TASK_TITLE_MIN_LENGTH}-{TASK_TITLE_MAX_LENGTH} characters)"
+    )
+    description: Optional[str] = Field(
+        None,
+        max_length=TASK_DESCRIPTION_MAX_LENGTH,
+        description=f"Task description (max {TASK_DESCRIPTION_MAX_LENGTH} characters)"
+    )
     status: TaskStatus = TaskStatus.TODO
     due_date: Optional[datetime] = None
 
 class TaskCreate(TaskBase):
-    pass
+    
+    @field_validator('due_date')
+    @classmethod
+    def validate_due_date(cls, v: Optional[datetime]) -> Optional[datetime]:
+        """Validate that due_date is not in the past."""
+        return validate_due_date_not_past(v)
 
 class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: Optional[str] = Field(
+        None,
+        min_length=TASK_TITLE_MIN_LENGTH,
+        max_length=TASK_TITLE_MAX_LENGTH,
+        description=f"Task title ({TASK_TITLE_MIN_LENGTH}-{TASK_TITLE_MAX_LENGTH} characters)"
+    )
+    description: Optional[str] = Field(
+        None,
+        max_length=TASK_DESCRIPTION_MAX_LENGTH,
+        description=f"Task description (max {TASK_DESCRIPTION_MAX_LENGTH} characters)"
+    )
     status: Optional[TaskStatus] = None
     due_date: Optional[datetime] = None
+    
+    @field_validator('due_date')
+    @classmethod
+    def validate_due_date(cls, v: Optional[datetime]) -> Optional[datetime]:
+        """Validate that due_date is not in the past."""
+        return validate_due_date_not_past(v)
 
 class TaskResponse(TaskBase):
     id: int
@@ -30,15 +64,14 @@ class TaskResponse(TaskBase):
     @model_validator(mode='before')
     @classmethod
     def extract_owner_email(cls, data: Any) -> Any:
-        """Extrae el email del owner desde la relación cargada."""
-        # Si data es un objeto SQLAlchemy (tiene atributos)
+        """Extracts the owner's email from the loaded relationship."""
+
         if hasattr(data, 'owner') and data.owner and hasattr(data.owner, 'email'):
-            # Si es un dict, actualizamos
+           
             if isinstance(data, dict):
                 data['owner_email'] = data.owner.email
-            # Si es un objeto, creamos un dict con los valores
+           
             else:
-                # Convertir el objeto SQLAlchemy a dict
                 result = {
                     'id': data.id,
                     'title': data.title,

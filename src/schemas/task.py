@@ -7,6 +7,7 @@ from src.core.constants import (
     TASK_TITLE_MAX_LENGTH,
     TASK_DESCRIPTION_MAX_LENGTH
 )
+from src.schemas.validators import validate_due_date_not_past
 
 class TaskBase(BaseModel):
     title: str = Field(
@@ -26,16 +27,9 @@ class TaskCreate(TaskBase):
     
     @field_validator('due_date')
     @classmethod
-    def validate_due_date_not_past(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_due_date(cls, v: Optional[datetime]) -> Optional[datetime]:
         """Validate that due_date is not in the past."""
-        if v is not None:
-            # Make both timezone-aware for comparison
-            now = datetime.now(timezone.utc)
-            due_date = v if v.tzinfo else v.replace(tzinfo=timezone.utc)
-            
-            if due_date < now:
-                raise ValueError('Due date cannot be in the past')
-        return v
+        return validate_due_date_not_past(v)
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = Field(
@@ -54,16 +48,9 @@ class TaskUpdate(BaseModel):
     
     @field_validator('due_date')
     @classmethod
-    def validate_due_date_not_past(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_due_date(cls, v: Optional[datetime]) -> Optional[datetime]:
         """Validate that due_date is not in the past."""
-        if v is not None:
-            # Make both timezone-aware for comparison
-            now = datetime.now(timezone.utc)
-            due_date = v if v.tzinfo else v.replace(tzinfo=timezone.utc)
-            
-            if due_date < now:
-                raise ValueError('Due date cannot be in the past')
-        return v
+        return validate_due_date_not_past(v)
 
 class TaskResponse(TaskBase):
     id: int

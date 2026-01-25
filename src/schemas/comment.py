@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from src.core.constants import COMMENT_CONTENT_MIN_LENGTH, COMMENT_CONTENT_MAX_LENGTH
 
 
@@ -36,3 +36,23 @@ class CommentResponse(CommentBase):
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode='before')
+    @classmethod
+    def extract_author_email(cls, data: Any) -> Any:
+        """Extract the author's email from the loaded relationship."""
+        if hasattr(data, 'author') and data.author and hasattr(data.author, 'email'):
+            if isinstance(data, dict):
+                data['author_email'] = data.author.email
+            else:
+                result = {
+                    'id': data.id,
+                    'content': data.content,
+                    'task_id': data.task_id,
+                    'author_id': data.author_id,
+                    'author_email': data.author.email,
+                    'created_at': data.created_at,
+                    'updated_at': data.updated_at
+                }
+                return result
+        return data

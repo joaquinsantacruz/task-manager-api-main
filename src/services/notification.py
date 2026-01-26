@@ -25,7 +25,28 @@ class NotificationService:
         limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Notification]:
         """
-        Gets notifications for a user.
+        Retrieve notifications for the authenticated user with pagination support.
+        
+        This method allows users to fetch their notification history, with the option
+        to filter only unread notifications. Notifications are returned in reverse
+        chronological order (newest first).
+        
+        Args:
+            db: Async database session for executing queries
+            current_user: The authenticated user requesting their notifications
+            unread_only: If True, return only unread notifications. If False, return all.
+                        Default is False.
+            skip: Number of notifications to skip for pagination. Default is 0.
+            limit: Maximum number of notifications to return. Default is DEFAULT_PAGE_SIZE.
+        
+        Returns:
+            List[Notification]: List of notification objects matching the criteria.
+                               Empty list if no notifications are found.
+        
+        Note:
+            - Users can only access their own notifications
+            - Notifications include task-related alerts (due dates, overdue, assignments)
+            - Each notification includes type, message, timestamp, and read status
         """
         return await NotificationRepository.get_user_notifications(
             db=db,
@@ -41,7 +62,22 @@ class NotificationService:
         current_user: User
     ) -> int:
         """
-        Counts unread notifications for a user.
+        Count the total number of unread notifications for the authenticated user.
+        
+        This method is typically used to display notification badges or counters
+        in the user interface, showing how many new notifications require attention.
+        
+        Args:
+            db: Async database session for executing queries
+            current_user: The authenticated user whose unread notifications will be counted
+        
+        Returns:
+            int: Total count of unread notifications. Returns 0 if no unread notifications exist.
+        
+        Note:
+            - Only counts notifications where is_read = False
+            - Users can only count their own notifications
+            - This is a lightweight query optimized for frequent polling
         """
         return await NotificationRepository.count_unread(db, current_user.id)
     
@@ -52,8 +88,27 @@ class NotificationService:
         current_user: User
     ) -> Notification:
         """
-        Mark a notification as read.
-        Only the notification owner can mark it as read.
+        Mark a specific notification as read for the authenticated user.
+        
+        This method updates the notification's is_read flag to True and records
+        the timestamp when the notification was read. Only the notification owner
+        can mark their own notifications as read.
+        
+        Args:
+            db: Async database session for executing queries
+            notification_id: Unique identifier of the notification to mark as read
+            current_user: The authenticated user who owns the notification
+        
+        Returns:
+            Notification: The updated notification object with is_read = True
+        
+        Raises:
+            HTTPException 404: If notification with the given ID doesn't exist
+            HTTPException 403: If current user doesn't own the notification
+        
+        Security:
+            - Permission check ensures users can only mark their own notifications
+            - Uses centralized permission validation (require_notification_access)
         """
         notification = await NotificationRepository.get_by_id(db, notification_id)
         
@@ -75,8 +130,31 @@ class NotificationService:
         current_user: User
     ) -> None:
         """
-        Delete a notification.
-        Only the notification owner can delete it.
+        Permanently delete a notification from the system.
+        
+        This method removes a notification from the database entirely. Only the
+        notification owner can delete their own notifications. This action cannot
+        be undone.
+        
+        Args:
+            db: Async database session for executing queries
+            notification_id: Unique identifier of the notification to delete
+            current_user: The authenticated user who owns the notification
+        
+        Returns:
+            None
+        
+        Raises:
+            HTTPException 404: If notification with the given ID doesn't exist
+            HTTPException 403: If current user doesn't own the notification
+        
+        Security:
+            - Permission check ensures users can only delete their own notifications
+            - Uses centralized permission validation (require_notification_access)
+        
+        Note:
+            - This is a hard delete operation (not soft delete)
+            - Consider marking as read instead if notification history is needed
         """
         notification = await NotificationRepository.get_by_id(db, notification_id)
         
@@ -94,13 +172,41 @@ class NotificationService:
     @staticmethod
     async def generate_due_date_notifications(db: AsyncSession) -> dict:
         """
-        Generates notifications for tasks with approaching or overdue due dates.
-        This function should be called periodically (e.g., every hour or via a manual endpoint).
+        Generate automated notifications for tasks based on their due dates.
         
-        Logic:
-        - Tasks due today → "due_today" notification
-        - Tasks due in the next 24 hours → "due_soon" notification
-        - Overdue and incomplete tasks → "overdue" notification
+        This function scans all active (non-completed) tasks and creates appropriate
+        notifications based on their due date status. It should be called periodically
+        by a scheduled job (e.g., cron, celery beat) or manually triggered via an endpoint.
+        
+        Notification Logic:
+            - Overdue tasks (due_date < now): Creates "overdue" notification
+            - Tasks due today (due_date between now and end of today): Creates "due_today" notification  
+            - Tasks due soon (due_date in next 24 hours): Creates "due_soon" notification
+        
+        Args:
+            db: Async database session for executing queries
+        
+        Returns:
+            dict: Summary of notifications created with keys:
+                - "due_today" (int): Count of due today notifications created
+                - "due_soon" (int): Count of due soon notifications created
+                - "overdue" (int): Count of overdue notifications created
+        
+        Behavior:
+            - Only processes tasks with status != DONE
+            - Prevents duplicate notifications by checking if notification already exists
+            - Each task can have only one notification per type
+            - All timestamps are handled in UTC timezone
+            - Notifications are sent to the task owner (owner_id)
+        
+        Example Return:
+            {"due_today": 3, "due_soon": 5, "overdue": 2}
+        
+        Note:
+            - This is an idempotent operation (safe to run multiple times)
+            - Recommended execution frequency: every 1-6 hours
+            - Does not delete or update existing notifications
+            - Task completion status changes won't remove existing notifications
         """
         now = datetime.now(timezone.utc)
         today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)

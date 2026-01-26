@@ -3,17 +3,59 @@ import api from '../api/axios';
 import { AuthSession, User } from '../types';
 import { UserService } from '../services/userService';
 
-// 2. Definimos la forma del Contexto
+/**
+ * Authentication Context Interface
+ * 
+ * Defines the shape of the authentication context available to consuming components.
+ */
 interface AuthContextType {
+  /** Current authenticated user session (null if not logged in) */
   user: AuthSession | null;
+  
+  /** 
+   * Authenticate user with credentials
+   * @param username - User's email address
+   * @param password - User's password
+   * @returns Object with success status and optional error message
+   */
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  
+  /** Log out the current user and clear session */
   logout: () => void;
+  
+  /** Loading state during initial authentication check */
   loading: boolean;
 }
 
+/**
+ * Authentication Context
+ * 
+ * Provides authentication state and methods throughout the application.
+ * Must be consumed via useAuth() hook.
+ */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// 3. Corregimos la sintaxis de las props ({ children })
+/**
+ * AuthProvider Component
+ * 
+ * Wraps the application to provide authentication context to all child components.
+ * Handles token persistence, automatic login restoration, and session management.
+ * 
+ * Features:
+ *   - Automatic token restoration from localStorage on mount
+ *   - Fetches user data after token restoration
+ *   - Persists token across browser sessions
+ *   - Provides centralized login/logout functionality
+ * 
+ * @param children - Child components that will have access to auth context
+ * 
+ * @example
+ * ```tsx
+ * <AuthProvider>
+ *   <App />
+ * </AuthProvider>
+ * ```
+ */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 4. Usamos Genéricos <AuthSession | null> para que TS acepte objetos o nulos
   const [user, setUser] = useState<AuthSession | null>(null);
@@ -81,7 +123,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// 7. Hook personalizado protegido
+/**
+ * useAuth Hook
+ * 
+ * Custom hook to access authentication context from any component.
+ * Must be used within an AuthProvider.
+ * 
+ * @returns AuthContextType object containing:
+ *   - user: Current authenticated user session
+ *   - login: Function to authenticate user
+ *   - logout: Function to log out user
+ *   - loading: Boolean indicating if initial auth check is in progress
+ * 
+ * @throws Error if used outside of AuthProvider
+ * 
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const { user, login, logout } = useAuth();
+ *   
+ *   if (!user) {
+ *     return <div>Please log in</div>;
+ *   }
+ *   
+ *   return <div>Welcome {user.user?.email}</div>;
+ * }
+ * ```
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

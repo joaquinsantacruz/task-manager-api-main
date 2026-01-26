@@ -1,18 +1,69 @@
 import { Task } from '../../types';
 
+/**
+ * TaskItem Component Props
+ */
 interface TaskItemProps {
+  /** The task object to display */
   task: Task;
+  
+  /** Callback when task is clicked to view details */
   onOpenDetail: (task: Task) => void;
+  
+  /** Callback when status badge is clicked to toggle status */
   onToggleStatus: (task: Task, e: React.MouseEvent) => void;
+  
+  /** Callback when delete button is clicked */
   onDelete: (id: number) => void;
 }
 
+/**
+ * Status color configuration
+ * Maps task status to visual styling (background, text color, label)
+ */
 const STATUS_COLORS = {
   done: { bg: '#28a745', text: '#fff', label: 'COMPLETADA' },
   in_progress: { bg: '#ffc107', text: '#000', label: 'EN PROGRESO' },
   todo: { bg: '#6c757d', text: '#fff', label: 'POR HACER' }
 };
 
+/**
+ * TaskItem Component
+ * 
+ * Displays a single task in a list with interactive status badge and actions.
+ * 
+ * Features:
+ *   - Clickable status badge to cycle through task statuses
+ *   - Click on task to view full details
+ *   - Visual distinction for completed tasks (strikethrough)
+ *   - Truncated title and description with ellipsis
+ *   - Delete button
+ *   - Hover effects for interactive elements
+ * 
+ * Status Flow:
+ *   - Clicking status badge cycles: TODO → IN_PROGRESS → DONE → TODO
+ * 
+ * @param task - Task object to display
+ * @param onOpenDetail - Handler for clicking on task (opens detail modal)
+ * @param onToggleStatus - Handler for clicking status badge (cycles status)
+ * @param onDelete - Handler for delete button
+ * 
+ * @example
+ * ```tsx
+ * <TaskItem
+ *   task={task}
+ *   onOpenDetail={setSelectedTask}
+ *   onToggleStatus={handleToggleStatus}
+ *   onDelete={handleDeleteTask}
+ * />
+ * ```
+ * 
+ * Styling:
+ *   - Status badge with color coding (green=done, yellow=in_progress, gray=todo)
+ *   - Hover opacity effect on status badge
+ *   - Strikethrough text for completed tasks
+ *   - Ellipsis for long titles/descriptions
+ */
 export default function TaskItem({ task, onOpenDetail, onToggleStatus, onDelete }: TaskItemProps) {
   const statusConfig = STATUS_COLORS[task.status];
 

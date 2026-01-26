@@ -3,17 +3,73 @@ import { Notification } from '../../types';
 import { NotificationItem } from './';
 
 /**
- * NotificationBell - Component for notification bell icon with dropdown
- * 
+ * NotificationBell Component Props
  */
 interface NotificationBellProps {
+  /** Array of all user notifications */
   notifications: Notification[];
+  
+  /** Total count of unread notifications */
   unreadCount: number;
+  
+  /** Callback when notification is marked as read */
   onMarkAsRead: (id: number) => void;
+  
+  /** Callback when notification is deleted */
   onDelete: (id: number) => void;
+  
+  /** Optional callback when "View All" is clicked */
   onViewAll?: () => void;
+  
+  /** Optional callback when notification is clicked (receives task ID) */
   onNotificationClick?: (taskId: number) => void;
 }
+
+/**
+ * NotificationBell Component
+ * 
+ * Displays a bell icon with unread count badge and dropdown list of recent notifications.
+ * Provides quick access to notifications without navigating away from current page.
+ * 
+ * Features:
+ *   - Shows unread notification count badge (displays "9+" for 10 or more)
+ *   - Dropdown with 5 most recent notifications
+ *   - Click outside to close dropdown
+ *   - Supports marking as read and deleting notifications
+ *   - Optional "View All" button to navigate to full notifications page
+ *   - Optional click handler for notification-to-task navigation
+ * 
+ * @param notifications - Array of all user notifications
+ * @param unreadCount - Total count of unread notifications
+ * @param onMarkAsRead - Function called when marking notification as read
+ * @param onDelete - Function called when deleting notification
+ * @param onViewAll - Optional function called when clicking "View All"
+ * @param onNotificationClick - Optional function called when clicking notification
+ * 
+ * @example
+ * ```tsx
+ * <NotificationBell
+ *   notifications={notifications}
+ *   unreadCount={unreadCount}
+ *   onMarkAsRead={handleMarkAsRead}
+ *   onDelete={handleDelete}
+ *   onViewAll={() => navigate('/notifications')}
+ *   onNotificationClick={(taskId) => navigate(`/tasks/${taskId}`)}
+ * />
+ * ```
+ * 
+ * Behavior:
+ *   - Only shows 5 most recent notifications in dropdown
+ *   - Badge shows "9+" for 10 or more unread notifications
+ *   - Clicking outside dropdown closes it
+ *   - Bell icon toggles dropdown open/closed
+ * 
+ * Styling:
+ *   - Bell emoji: 🔔
+ *   - Red badge for unread count
+ *   - White dropdown with shadow
+ *   - Absolute positioning for dropdown
+ */
 
 export default function NotificationBell({
   notifications,

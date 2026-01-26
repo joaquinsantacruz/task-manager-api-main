@@ -26,12 +26,37 @@ class TaskService:
         current_user: User
     ) -> Task:
         """
-        Create a new task.
+        Create a new task in the system and assign it to the current user.
         
-        Validations:
-        - User must be active to create tasks
+        This method creates a task with the provided data and automatically assigns
+        ownership to the authenticated user who created it. Only active users can
+        create tasks.
         
-        The task will be automatically assigned to the current user.
+        Args:
+            db: Async database session for executing queries
+            task_data: TaskCreate schema containing task information:
+                - title (str): Task title/name (required)
+                - description (str, optional): Detailed task description
+                - status (TaskStatus, optional): Initial status (default: TODO)
+                - due_date (datetime, optional): Task deadline
+            current_user: The authenticated user creating the task
+        
+        Returns:
+            Task: The newly created task object with all fields populated,
+                 including auto-generated ID and timestamps
+        
+        Raises:
+            HTTPException 403: If current user is inactive (is_active = False)
+        
+        Security:
+            - Task ownership is automatically set to current_user.id
+            - Cannot create tasks on behalf of other users
+            - Inactive users are blocked from creating tasks
+        
+        Note:
+            - Created tasks are immediately persisted to the database
+            - Default status is TODO if not specified
+            - Owner can be changed later via change_task_owner (OWNER role only)
         """
         # Verify that the user is active
         if not current_user.is_active:
@@ -109,9 +134,36 @@ class TaskService:
         user: User
     ) -> Task:
         """
-        Fetch a task and verify if the user has permission to modify it.
-        - OWNER role: Can modify ANY task
-        - MEMBER role: Can only modify their own tasks
+        Fetch a task and verify the user has permission to modify it.
+        
+        This is a helper method used internally before update/delete operations
+        to ensure the user has the necessary permissions to modify the task.
+        Permission rules are enforced based on user role.
+        
+        Permission Rules:
+            - OWNER role: Can modify ANY task in the system
+            - MEMBER role: Can only modify tasks they own (owner_id = user.id)
+        
+        Args:
+            db: Async database session for executing queries
+            task_id: Unique identifier of the task to retrieve
+            user: The authenticated user attempting to access the task
+        
+        Returns:
+            Task: The task object if found and user has permission
+        
+        Raises:
+            HTTPException 404: If task with the given ID doesn't exist
+            HTTPException 403: If user doesn't have permission to modify the task
+        
+        Security:
+            - Uses centralized permission check (require_task_modification)
+            - Prevents unauthorized task modifications
+            - MEMBER users cannot access tasks owned by others
+        
+        Note:
+            - This method is used by update_task and delete_task
+            - For read-only access, use get_task_by_id_for_user instead
         """
         task = await TaskRepository.get_by_id(db, id=task_id)
         

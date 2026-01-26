@@ -28,7 +28,7 @@ jobs:
       # Run tests
       - run:
           name: Run tests
-          command: uv run pytest
+          command: uv run python -m pytest
       
       - persist_to_workspace:
           root: ~/project

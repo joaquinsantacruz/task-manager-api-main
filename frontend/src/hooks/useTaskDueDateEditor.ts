@@ -3,12 +3,38 @@ import { useState, useCallback } from 'react';
 /**
  * useTaskDueDateEditor - Custom hook for managing due date editing state
  * 
- * Following SOLID principles:
- * - Single Responsibility: Manages only due date editing state
- * - Open/Closed: Easy to extend with new functionality
+ * Provides inline editing functionality for task due dates with edit/cancel/save operations.
+ * Handles date format conversion between ISO format (backend) and YYYY-MM-DD (HTML input).
  * 
- * @param currentDueDate - The current due date of the task (ISO format)
- * @returns State and handlers for due date editing
+ * Following SOLID principles:
+ *   - Single Responsibility: Manages only due date editing state
+ *   - Open/Closed: Easy to extend with new functionality
+ * 
+ * @param currentDueDate - The current due date of the task (ISO format or null)
+ * @returns Object containing:
+ *   - isEditing: Boolean indicating if date is being edited
+ *   - selectedDate: Currently selected date in YYYY-MM-DD format
+ *   - setSelectedDate: Function to update selected date
+ *   - startEditing: Function to enter edit mode (initializes with current date)
+ *   - cancelEditing: Function to exit edit mode without saving
+ *   - saveDueDate: Function to save the selected date (accepts callback)
+ * 
+ * @example
+ * ```tsx
+ * const { isEditing, selectedDate, setSelectedDate, startEditing, saveDueDate } = 
+ *   useTaskDueDateEditor(task.due_date);
+ * 
+ * // Enter edit mode
+ * <button onClick={startEditing}>Edit Due Date</button>
+ * 
+ * // Save changes
+ * <button onClick={() => saveDueDate(handleUpdateTask)}>Save</button>
+ * ```
+ * 
+ * Features:
+ *   - Converts between ISO and date input formats automatically
+ *   - Supports clearing due date (empty string becomes null)
+ *   - Restores original value on cancel
  */
 export const useTaskDueDateEditor = (currentDueDate: string | null | undefined) => {
   // Helper function to convert ISO date to YYYY-MM-DD format for input

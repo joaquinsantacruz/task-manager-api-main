@@ -18,9 +18,35 @@ class UserService:
         user_data: UserCreateByOwner
     ) -> User:
         """
-        Create a new user. Validates that the email doesn't exist.
+        Create a new user account in the system (OWNER role required).
         
-        Note: Returns a generic error message to prevent email enumeration attacks.
+        This method allows users with OWNER role to create new user accounts
+        with specified roles and credentials. The method validates email uniqueness
+        and returns generic error messages to prevent email enumeration attacks.
+        
+        Args:
+            db: Async database session for executing queries
+            user_data: UserCreateByOwner schema containing:
+                - email (str): User's email address (must be unique)
+                - password (str): Plain text password (will be hashed)
+                - role (UserRole): User role (OWNER or MEMBER)
+        
+        Returns:
+            User: The newly created user object with hashed password
+        
+        Raises:
+            HTTPException 400: If email already exists (generic error to prevent enumeration)
+        
+        Security:
+            - Password is automatically hashed before storage
+            - Generic error messages prevent email enumeration attacks
+            - All created users are set to active (is_active = True) by default
+            - Only OWNER role can call this endpoint (enforced in API layer)
+        
+        Note:
+            - Email validation is case-sensitive
+            - Password complexity requirements should be enforced at schema level
+            - Created users can immediately log in with provided credentials
         """
         # Check if email already exists
         existing_user = await UserRepository.get_by_email(db, email=user_data.email)

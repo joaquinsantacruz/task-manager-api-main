@@ -5,4 +5,5 @@ export { default as TaskFormModal } from './TaskFormModal';
 export { default as TaskItem } from './TaskItem';
 export { default as TaskList } from './TaskList';
 export { default as TaskOwnerEditor } from './TaskOwnerEditor';
+export { default as TaskPagination } from './TaskPagination';
 export { default as TaskStatusButtons } from './TaskStatusButtons';

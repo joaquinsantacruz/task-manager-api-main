@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TaskService } from '../services/taskService';
 import { Task, TaskStatus, CreateTaskDTO } from '../types';
-import { TaskFormModal, TaskDetailModal, TaskList, TaskFilter } from '../components/tasks';
+import { TaskFormModal, TaskDetailModal, TaskList, TaskFilter, TaskPagination } from '../components/tasks';
 import { useTaskFilter } from '../hooks/useTaskFilter';
 
 const STATUS_ROTATION: Record<TaskStatus, TaskStatus> = {
@@ -15,8 +15,16 @@ export default function Tasks() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   
   const { selectedStatuses, setSelectedStatuses, filteredTasks } = useTaskFilter(tasks);
+  
+  // Calculate paginated tasks
+  const totalFilteredTasks = filteredTasks.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedTasks = filteredTasks.slice(startIndex, endIndex);
 
   const fetchTasks = async () => {
     try {
@@ -107,6 +115,20 @@ export default function Tasks() {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatuses]);
+
   return (
     <div className="tasks-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -149,10 +171,18 @@ export default function Tasks() {
       />
 
       <TaskList 
-        tasks={filteredTasks}
+        tasks={paginatedTasks}
         onOpenDetail={handleOpenDetail}
         onToggleStatus={handleToggleStatus}
         onDelete={handleDelete}
+      />
+
+      <TaskPagination 
+        currentPage={currentPage}
+        totalItems={totalFilteredTasks}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
       />
     </div>
   );

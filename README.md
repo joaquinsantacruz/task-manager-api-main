@@ -34,6 +34,21 @@ The application supports two user roles:
 - **OWNER**: Full administrative access to all tasks and users
 - **MEMBER**: Access to personal tasks and limited permissions
 
+## Live Demos
+
+Try out the application without any installation:
+
+### 🌐 Full Application
+- **Production URL**: [https://task-manager-api-main.vercel.app/](https://task-manager-api-main.vercel.app/)
+- **Hosting**: Vercel (Frontend) + Heroku (Backend)
+- **Features**: Complete application with frontend and backend
+
+### 🔌 Backend API Only
+- **API URL**: [https://task-manager-api-6f2854f25b87.herokuapp.com/](https://task-manager-api-6f2854f25b87.herokuapp.com/)
+- **Hosting**: Heroku
+- **API Documentation**: [https://task-manager-api-6f2854f25b87.herokuapp.com/docs](https://task-manager-api-6f2854f25b87.herokuapp.com/docs)
+- **Database**: Neon.tech (PostgreSQL)
+
 ## Features
 
 ### Core Functionality

@@ -1,0 +1,59 @@
+version: 2.1
+
+orbs:
+  python: circleci/python@2.0.3
+  coveralls: coveralls/coveralls@2.2.5
+
+jobs:
+  build_and_test:
+    docker:
+      - image: cimg/python:3.13
+      - image: cimg/postgres:16.1
+        environment:
+          POSTGRES_USER: taskuser
+          POSTGRES_PASSWORD: taskpass
+          POSTGRES_DB: taskmanager_test
+    steps:
+      - checkout
+      
+      # Install uv
+      - run:
+          name: Install uv
+          command: |
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> $BASH_ENV
+            source $BASH_ENV
+      
+      # Verify uv installation
+      - run:
+          name: Verify uv installation
+          command: uv --version
+      
+      # Install dependencies with uv
+      - run:
+          name: Install dependencies
+          command: uv sync --all-extras
+      
+      # Wait for PostgreSQL to be ready
+      - run:
+          name: Wait for PostgreSQL
+          command: |
+            dockerize -wait tcp://localhost:5432 -timeout 1m
+      
+      # Run tests
+      - run:
+          name: Run tests with coverage
+          command: uv run python -m pytest --cov=src --cov-report=lcov --cov-report=term
+      
+      # Upload coverage to Coveralls
+      - coveralls/upload
+      
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
+
+workflows:
+  build_test_deploy:
+    jobs:
+      - build_and_test

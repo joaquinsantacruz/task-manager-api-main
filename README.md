@@ -1,228 +1,451 @@
-# Task Manager API - Take-Home Assignment
+# Task Manager API
 
-## Project Brief
+A full-stack task management application built with FastAPI and React, featuring role-based access control, real-time notifications, and comprehensive task collaboration tools.
 
-Build a **production-ready Task Management API with a React frontend**.
+[![CircleCI](https://circleci.com/gh/YOUR_USERNAME/task-manager-api.svg?style=svg)](https://circleci.com/gh/YOUR_USERNAME/task-manager-api)
+[![Coverage Status](https://coveralls.io/repos/github/YOUR_USERNAME/task-manager-api/badge.svg?branch=main)](https://coveralls.io/github/YOUR_USERNAME/task-manager-api?branch=main)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.6-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18.3.1-61DAFB.svg?style=flat&logo=React&logoColor=white)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-3178C6.svg?style=flat&logo=TypeScript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?style=flat&logo=PostgreSQL&logoColor=white)](https://www.postgresql.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Your system should allow teams to:
-- Manage tasks (create, update, track status)
-- Control access based on user roles/permissions
-- Authenticate users securely
+## Table of Contents
 
----
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Documentation](#documentation)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+- [Running Tests](#running-tests)
+- [Project Structure](#project-structure)
+- [API Documentation](#api-documentation)
+- [Areas for Improvement](#areas-for-improvement)
+- [Known Issues](#known-issues)
+- [Contributing](#contributing)
+- [License](#license)
 
-## What to Build
+## Overview
 
-### Required Features
+Task Manager API is a modern, full-stack application designed for efficient task management and team collaboration. It provides a robust RESTful API built with FastAPI and a responsive React frontend, featuring role-based access control (RBAC), real-time notifications, task commenting, and comprehensive task lifecycle management.
 
-**Must Have (MVP):**
-- User authentication (login. The registration is not needed, a default user can be used)
-- Task CRUD operations
-- Simple role-based access (owner vs member)
-- Minimal React frontend to interact with the API
+The application supports two user roles:
+- **OWNER**: Full administrative access to all tasks and users
+- **MEMBER**: Access to personal tasks and limited permissions
 
-**Should Have (if time permits):**
-- Task filtering by status
-- Task assignment to users
+## Features
 
-**Nice to Have (bonus):**
-- Task comments
-- Due date notifications
-- Activity log
-- Advanced frontend features
+### Core Functionality
+- ✅ **Task Management**: Create, read, update, and delete tasks with status tracking
+- ✅ **Role-Based Access Control (RBAC)**: Owner and Member roles with granular permissions
+- ✅ **User Authentication**: JWT-based authentication with secure token handling
+- ✅ **Task Comments**: Collaborative commenting system on tasks
+- ✅ **Smart Notifications**: Automated due date notifications (overdue, due today, due soon)
+- ✅ **Task Assignment**: Owners can reassign tasks to other users
+- ✅ **Due Date Management**: Set and track task deadlines with visual indicators
 
----
+### Technical Features
+- 🔒 **Security**: Argon2 password hashing, JWT tokens, CORS protection
+- 📊 **Comprehensive Logging**: Backend and frontend logging with file rotation
+- 🧪 **Test Coverage**: 98 test cases with pytest
+- 🚀 **CI/CD Pipeline**: Automated testing and coverage reporting with CircleCI
+- 📱 **Responsive UI**: Mobile-friendly React interface
+- 🔄 **Real-time Updates**: Automatic notification polling
+- 📄 **API Documentation**: Auto-generated Swagger/OpenAPI documentation
+- 🐳 **Docker Support**: Containerized deployment with Docker Compose
 
-## Technical Requirements
+## Tech Stack
 
 ### Backend
-
-**Tech Stack (Required):**
-- Python 3.13+
-- FastAPI + Uvicorn
-- SQLAlchemy
-- PostgreSQL (provided in docker-compose)
-- pytest
-
-**API Endpoints (Suggested Structure):**
-```
-Authentication:
-POST   /api/auth/login
-
-Tasks:
-GET    /api/tasks          (list user's tasks)
-POST   /api/tasks          (create task)
-GET    /api/tasks/{id}
-PUT    /api/tasks/{id}
-DELETE /api/tasks/{id}
-```
-
-You can modify this structure if you have a better approach.
-
-**Authentication:**
-
-Implement JWT-based authentication:
-- Login returns JWT token
-- Protected endpoints verify JWT
-- Use any library you're comfortable with (python-jose, PyJWT, etc.)
-
-**Data Model Guidelines:**
-
-Your system needs at minimum:
-- **Users** (with authentication)
-- **Tasks** (with status tracking)
-- **Relationships** between users and tasks
-
-Design the schema based on the requirements. Document your decisions.
-
----
+- **Framework**: FastAPI 0.115.6
+- **Language**: Python 3.13
+- **Database**: PostgreSQL 16 with asyncpg driver
+- **ORM**: SQLAlchemy 2.0 (async)
+- **Migrations**: Alembic
+- **Authentication**: JWT with python-jose
+- **Password Hashing**: Argon2
+- **Testing**: pytest, pytest-asyncio, pytest-cov
+- **Package Manager**: uv
 
 ### Frontend
+- **Framework**: React 18.3.1
+- **Language**: TypeScript 5.6.2
+- **Build Tool**: Vite 6.0.3
+- **HTTP Client**: Axios
+- **Styling**: CSS3 with modern layouts
 
-**Tech Stack:**
-- React 18+
-- Vite (starter provided)
-- Your choice of styling (Tailwind, Material-UI, plain CSS, etc.)
+### DevOps & Tools
+- **CI/CD**: CircleCI
+- **Code Coverage**: Coveralls
+- **Containerization**: Docker & Docker Compose
+- **Version Control**: Git
+- **API Testing**: Swagger UI
 
-**Minimum (Required):**
-- Login page
-- Task list page with CRUD operations (create, update status, delete)
-- Basic navigation
-- API integration with authentication
+## Documentation
 
-**Stretch Goal (Optional):**
-- Task management UI
-- Task filtering and search
-- User assignment interface
-- Responsive design improvements
+Additional documentation is available in the following files:
 
-**Not Required:**
-- Pixel-perfect design
-- Complex animations
-- State management libraries (unless you want to use them)
+- **[initial_README.md](initial_README.md)** - Original project requirements and specifications
+- **[LOGGING.md](LOGGING.md)** - Comprehensive logging system documentation
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide for getting up and running
+- **[README_SCRIPTS.md](README_SCRIPTS.md)** - Available scripts and commands reference
+- **Backend API Docs** - Available at `http://localhost:8000/docs` (Swagger UI)
+- **Alternative API Docs** - Available at `http://localhost:8000/redoc` (ReDoc)
 
----
+## Prerequisites
 
-## Getting Started
+Before running this application, ensure you have the following installed:
 
-We've provided:
-- Docker Compose setup with PostgreSQL
-- Base backend project structure
-- Frontend starter with Vite + React
-- Dependency management with `uv`
+### Required
+- **Python 3.13+** - [Download Python](https://www.python.org/downloads/)
+- **Node.js 18+** and npm - [Download Node.js](https://nodejs.org/)
+- **PostgreSQL 16+** - [Download PostgreSQL](https://www.postgresql.org/download/)
+- **uv** - Python package manager ([Installation](https://github.com/astral-sh/uv))
 
-### Backend Setup
+### Optional
+- **Docker & Docker Compose** - For containerized deployment
+- **Git** - For version control
+
+### Installing uv
+
 ```bash
-# Install dependencies
-uv pip install -e ".[dev]"
+# On macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Start database
-docker-compose up -d db
-
-# Run the API (after you implement it)
-uvicorn src.main:app --reload
+# On Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### Frontend Setup
+## Installation
+
+### 1. Clone the Repository
+
 ```bash
+git clone https://github.com/YOUR_USERNAME/task-manager-api.git
+cd task-manager-api
+```
+
+### 2. Backend Setup
+
+#### Create PostgreSQL Database
+
+```bash
+# Access PostgreSQL
+psql -U postgres
+
+# Create database and user
+CREATE DATABASE taskmanager;
+CREATE USER taskuser WITH PASSWORD 'taskpass';
+GRANT ALL PRIVILEGES ON DATABASE taskmanager TO taskuser;
+\q
+```
+
+#### Install Backend Dependencies
+
+```bash
+# Install dependencies with uv
+uv sync
+```
+
+#### Configure Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Database
+DATABASE_URL=postgresql+asyncpg://taskuser:taskpass@localhost:5432/taskmanager
+
+# Security
+SECRET_KEY=your-secret-key-here-min-32-characters
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# CORS
+CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]
+
+# Logging
+DEBUG=True
+```
+
+#### Run Database Migrations
+
+```bash
+# Run migrations
+uv run alembic upgrade head
+```
+
+#### (Optional) Seed Initial Data
+
+```bash
+# Seed the database with sample data
+uv run python -m src.seed_data
+```
+
+This creates:
+- **Owner Users**: 
+    - `admin@admin.com` / `admin123`
+    - `bob.wilson@example.com` / `password123`
+- **Member Users**: 
+    - `john.doe@example.com` / `password123`
+    - `jane.smith@example.com` / `password123`
+    - `alice.johnson@example.com` / `password123`
+- Sample tasks and notifications
+
+### 3. Frontend Setup
+
+```bash
+# Navigate to frontend directory
 cd frontend
 
 # Install dependencies
 npm install
+```
 
-# Run development server
+## Running the Application
+
+### Quick Start
+
+For a simplified one-command setup, see **[QUICKSTART.md](QUICKSTART.md)**, which provides automated scripts to start the entire application stack on Windows, Linux, or macOS.
+
+### Conventional Setup
+
+If you prefer to start services manually or need more control over the process, follow these conventional methods:
+
+#### Prerequisites
+
+Ensure you have completed the [Installation](#installation) steps before proceeding.
+
+#### Option 1: Run Backend and Frontend Separately
+
+**1. Start the Database**
+
+```bash
+# Start PostgreSQL using Docker Compose
+docker-compose up -d db
+
+# Verify it's running
+docker-compose ps
+```
+
+**2. Start Backend Server**
+
+```bash
+# From project root
+uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+The API will be available at:
+- **API**: http://localhost:8000
+- **Swagger Docs**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+**3. Start Frontend Development Server**
+
+Open a new terminal window:
+
+```bash
+# From frontend directory
+cd frontend
 npm run dev
 ```
 
----
+The frontend will be available at:
+- **App**: http://localhost:5173
 
-## What We're Looking For
+#### Option 2: Run with Docker Compose (Database + Backend)
 
-### Backend (60%)
-- **Functionality**: Working API with authentication and permissions
-- **Code Quality**: Clean, maintainable code with proper structure
-- **Testing**: Critical paths covered with meaningful tests
-- **Production Readiness**: Error handling, logging, security basics
-- **Architecture**: Sensible design decisions
+**1. Start Database and Backend**
 
-### Frontend (30%)
-- **Functionality**: Can interact with all core API features
-- **Code Quality**: Clean React components
-- **User Experience**: Intuitive, functional interface
-- **API Integration**: Proper error handling, loading states
+```bash
+# Build and start database and backend services
+docker-compose up -d
 
-### Documentation (10%)
-- **SOLUTION.md**: Clear explanation of your decisions
-- **Code Documentation**: Comments where needed
-- **Setup Instructions**
+# View logs
+docker-compose logs -f
+```
 
----
+**2. Start Frontend Development Server**
 
-## Submission
+Open a new terminal window:
 
-1. **Create a public GitHub repository** with your solution
-2. **Commit regularly** - we want to see your development process
-3. **Include a SOLUTION.md** that explains:
-   - Your architectural decisions
-   - Trade-offs you considered
-   - What you prioritized and why
-   - What you would improve with more time
-   - How to run and test your solution
-4. **Send us the repository link** within **72 hours (3 days)**
+```bash
+# From frontend directory
+cd frontend
+npm run dev
+```
 
----
+**3. Stop Services**
 
-## AI Usage
+```bash
+# Stop backend and database
+docker-compose down
+```
 
-**AI tools are welcomed and encouraged.** We use them daily.
+Services:
+- **Backend**: http://localhost:8000
+- **Frontend**: http://localhost:5173
+- **PostgreSQL**: localhost:5432
 
-What matters:
-- You understand the code you submit
-- You can explain your design decisions
-- The code quality reflects professional standards
+## Running Tests
 
----
+### Backend Tests
 
-## Questions & Clarifications
+```bash
+# Run all tests
+uv run pytest
 
-**We want you to succeed.** If you have questions about requirements:
-- Email us at [Wazuh HR](hr@wazuh.com)
-- We'll respond as soon as we can!
+# Run with coverage
+uv run pytest --cov=src --cov-report=html --cov-report=term
 
-Don't let ambiguity block you - ask!
+# Run specific test file
+uv run pytest tests/test_tasks.py
 
----
+# Run specific test class
+uv run pytest tests/test_tasks.py::TestCreateTask
 
-## Important Notes
+# View coverage report
+open htmlcov/index.html  # macOS
+# or
+start htmlcov/index.html  # Windows
+```
 
-### Scope Management
-- **Focus on the MVP first** - make sure core features work
-- **Don't over-engineer** - production-ready for a small team, not Google-scale
-- **Document what you didn't implement** - explain your prioritization
+### Frontend Tests
 
-### What "Production-Ready" Means
-- Can be deployed and run reliably
-- Has appropriate error handling
-- Includes tests for critical functionality
-- Is documented
-- Has basic security (password hashing, JWT validation, etc.)
+```bash
+cd frontend
+npm run test
+```
 
-### Dependencies
-- You can add/remove/update dependencies as needed
-- **Document your changes** in SOLUTION.md with justification
+## Project Structure
 
----
+```
+task-manager-api/
+├── src/                          # Backend source code
+│   ├── api/
+│   │   └── v1/
+│   │       └── endpoints/        # API endpoints
+│   ├── core/                     # Core configurations
+│   │   ├── config.py            # Settings
+│   │   ├── security.py          # Auth utilities
+│   │   ├── logger.py            # Logging setup
+│   │   └── permissions.py       # RBAC logic
+│   ├── db/                       # Database configuration
+│   ├── models/                   # SQLAlchemy models
+│   ├── repositories/             # Data access layer
+│   ├── schemas/                  # Pydantic schemas
+│   └── services/                 # Business logic
+├── frontend/                     # Frontend source code
+│   └── src/
+│       ├── api/                  # API client
+│       ├── components/           # React components
+│       ├── context/              # React context
+│       ├── hooks/                # Custom hooks
+│       ├── pages/                # Page components
+│       ├── services/             # API services
+│       └── utils/                # Utilities
+├── tests/                        # Backend tests
+├── alembic/                      # Database migrations
+├── logs/                         # Application logs
+├── .circleci/                    # CI/CD configuration
+├── docker-compose.yml            # Docker composition
+├── pyproject.toml               # Python dependencies
+└── README.md                     # This file
+```
 
-## Definition of Done
+## API Documentation
 
-Your submission should:
-- Backend API runs with `uvicorn src.main:app --reload`
-- Frontend runs with `npm run dev` (in frontend directory)
-- Tests pass with `pytest`
-- Database can be started with `docker-compose up -d`
-- README or SOLUTION.md has clear setup instructions
-- Core user flows work end-to-end (register → login → create task → view task)
+### Authentication
 
----
+All endpoints (except `/login/access-token`) require JWT authentication.
 
-**Good luck!** 🚀
+**Login:**
+```bash
+POST /api/v1/login/access-token
+Content-Type: application/x-www-form-urlencoded
+
+username=owner@example.com&password=ownerpass123
+```
+
+**Response:**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+**Use Token:**
+```bash
+Authorization: Bearer <access_token>
+```
+
+### Key Endpoints
+
+#### Tasks
+- `GET /api/v1/tasks` - List user's tasks
+- `POST /api/v1/tasks` - Create new task
+- `GET /api/v1/tasks/{task_id}` - Get task details
+- `PUT /api/v1/tasks/{task_id}` - Update task
+- `DELETE /api/v1/tasks/{task_id}` - Delete task
+- `PATCH /api/v1/tasks/{task_id}/owner` - Change task owner (OWNER only)
+
+#### Comments
+- `GET /api/v1/tasks/{task_id}/comments` - Get task comments
+- `POST /api/v1/tasks/{task_id}/comments` - Create comment
+- `PUT /api/v1/comments/{comment_id}` - Update comment
+- `DELETE /api/v1/comments/{comment_id}` - Delete comment
+
+#### Notifications
+- `GET /api/v1/notifications` - Get notifications
+- `GET /api/v1/notifications/unread/count` - Count unread notifications
+- `PATCH /api/v1/notifications/{notification_id}/read` - Mark as read
+- `DELETE /api/v1/notifications/{notification_id}` - Delete notification
+- `POST /api/v1/notifications/check-due-dates` - Generate due date notifications (OWNER only)
+
+#### Users
+- `GET /api/v1/users/me` - Get current user
+- `GET /api/v1/users` - List users (OWNER sees all, MEMBER sees self)
+- `POST /api/v1/users` - Create user (OWNER only)
+
+For complete API documentation, visit http://localhost:8000/docs when running the application.
+
+## Areas for Improvement
+
+### Performance
+- [ ] Implement Redis caching for frequently accessed data
+- [ ] Add database query optimization and indexing strategy
+- [ ] Implement WebSocket for real-time notifications instead of polling
+
+### Features
+- [ ] Add file attachments to tasks
+- [ ] Implement task templates
+- [ ] Add projects to group tasks
+- [ ] Add task labels/tags for better organization
+- [ ] Implement task dependencies and subtasks
+- [ ] Add activity/audit log for task changes
+- [ ] Implement email notifications
+
+### Code Quality
+- [ ] Add frontend unit tests (Vitest/Jest)
+- [ ] Add E2E tests (Playwright/Cypress)
+
+### User Experience
+- [ ] Implement drag-and-drop for task reordering
+- [ ] Add bulk operations (bulk delete, bulk status update)
+- [ ] Implement undo/redo functionality
+
+## Known Issues
+
+- [ ] **Token Expiration Handling**: Frontend doesn't handle token expiration gracefully - users aren't notified when their session expires
+- [ ] **Notification Polling Performance**: Current polling interval may cause unnecessary API calls - consider implementing WebSocket or Server-Sent Events
+
+## Followed Development Guidelines 
+- Follow PEP 8 for Python code
+- Use TypeScript strict mode
+- Write tests for new features
+- Update documentation as needed
+- Ensure all tests pass before submitting PR
+- Keep commits atomic and well-described

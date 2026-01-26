@@ -6,11 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.constants import DEFAULT_PAGE_SIZE
 from src.core.errors import ERROR_TASK_NOT_FOUND, ERROR_COMMENT_NOT_FOUND
 from src.core.permissions import require_task_access, require_comment_modification, require_comment_deletion
+from src.core.logger import get_logger
 from src.models.comment import Comment
 from src.models.user import User
 from src.repositories.comment import CommentRepository
 from src.repositories.task import TaskRepository
 from src.schemas.comment import CommentCreate, CommentUpdate
+
+logger = get_logger(__name__)
 
 
 class CommentService:
@@ -102,6 +105,7 @@ class CommentService:
         # Verify task exists
         task = await TaskRepository.get_by_id(db, task_id)
         if not task:
+            logger.warning(f"Attempt to create comment on non-existent task {task_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ERROR_TASK_NOT_FOUND
@@ -110,7 +114,14 @@ class CommentService:
         # Verify permissions using centralized function
         require_task_access(current_user, task)
         
-        return await CommentRepository.create(db, task_id, current_user.id, comment_in)
+        try:
+            logger.info(f"User {current_user.id} creating comment on task {task_id}")
+            comment = await CommentRepository.create(db, task_id, current_user.id, comment_in)
+            logger.info(f"Comment {comment.id} created successfully on task {task_id}")
+            return comment
+        except Exception as e:
+            logger.error(f"Error creating comment on task {task_id}: {str(e)}", exc_info=True)
+            raise
     
     @staticmethod
     async def update_comment(
@@ -161,6 +172,7 @@ class CommentService:
         """
         comment = await CommentRepository.get_by_id(db, comment_id)
         if not comment:
+            logger.warning(f"Comment {comment_id} not found for update")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ERROR_COMMENT_NOT_FOUND
@@ -169,7 +181,14 @@ class CommentService:
         # Verify permissions using centralized function
         require_comment_modification(current_user, comment)
         
-        return await CommentRepository.update(db, comment, comment_in)
+        try:
+            logger.info(f"User {current_user.id} updating comment {comment_id}")
+            updated_comment = await CommentRepository.update(db, comment, comment_in)
+            logger.info(f"Comment {comment_id} updated successfully")
+            return updated_comment
+        except Exception as e:
+            logger.error(f"Error updating comment {comment_id}: {str(e)}", exc_info=True)
+            raise
     
     @staticmethod
     async def delete_comment(
@@ -214,6 +233,7 @@ class CommentService:
         """
         comment = await CommentRepository.get_by_id(db, comment_id)
         if not comment:
+            logger.warning(f"Comment {comment_id} not found for deletion")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ERROR_COMMENT_NOT_FOUND
@@ -222,4 +242,10 @@ class CommentService:
         # Verify permissions using centralized function
         require_comment_deletion(current_user, comment)
         
-        await CommentRepository.delete(db, comment)
+        try:
+            logger.info(f"User {current_user.id} deleting comment {comment_id}")
+            await CommentRepository.delete(db, comment)
+            logger.info(f"Comment {comment_id} deleted successfully")
+        except Exception as e:
+            logger.error(f"Error deleting comment {comment_id}: {str(e)}", exc_info=True)
+            raise

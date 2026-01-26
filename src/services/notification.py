@@ -12,6 +12,9 @@ from src.repositories.notification import NotificationRepository
 from src.core.permissions import require_notification_access
 from src.core.constants import DEFAULT_PAGE_SIZE
 from src.core.errors import ERROR_NOTIFICATION_NOT_FOUND
+from src.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class NotificationService:
@@ -48,13 +51,16 @@ class NotificationService:
             - Notifications include task-related alerts (due dates, overdue, assignments)
             - Each notification includes type, message, timestamp, and read status
         """
-        return await NotificationRepository.get_user_notifications(
+        logger.debug(f"User {current_user.id} fetching notifications (unread_only={unread_only}, skip={skip}, limit={limit})")
+        notifications = await NotificationRepository.get_user_notifications(
             db=db,
             user_id=current_user.id,
             unread_only=unread_only,
             skip=skip,
             limit=limit
         )
+        logger.debug(f"Retrieved {len(notifications)} notifications for user {current_user.id}")
+        return notifications
     
     @staticmethod
     async def count_unread_notifications(
@@ -110,9 +116,11 @@ class NotificationService:
             - Permission check ensures users can only mark their own notifications
             - Uses centralized permission validation (require_notification_access)
         """
+        logger.info(f"User {current_user.id} marking notification {notification_id} as read")
         notification = await NotificationRepository.get_by_id(db, notification_id)
         
         if not notification:
+            logger.warning(f"Notification {notification_id} not found for user {current_user.id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ERROR_NOTIFICATION_NOT_FOUND
@@ -121,7 +129,13 @@ class NotificationService:
         # Verify permissions using centralized function
         require_notification_access(current_user, notification)
         
-        return await NotificationRepository.mark_as_read(db, notification)
+        try:
+            updated_notification = await NotificationRepository.mark_as_read(db, notification)
+            logger.info(f"Notification {notification_id} marked as read by user {current_user.id}")
+            return updated_notification
+        except Exception as e:
+            logger.error(f"Error marking notification {notification_id} as read: {str(e)}", exc_info=True)
+            raise
     
     @staticmethod
     async def delete_notification(
@@ -159,6 +173,7 @@ class NotificationService:
         notification = await NotificationRepository.get_by_id(db, notification_id)
         
         if not notification:
+            logger.warning(f"Notification {notification_id} not found for deletion")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ERROR_NOTIFICATION_NOT_FOUND
@@ -167,7 +182,13 @@ class NotificationService:
         # Verify permissions using centralized function
         require_notification_access(current_user, notification)
         
-        await NotificationRepository.delete(db, notification)
+        try:
+            logger.info(f"User {current_user.id} deleting notification {notification_id}")
+            await NotificationRepository.delete(db, notification)
+            logger.info(f"Notification {notification_id} deleted successfully")
+        except Exception as e:
+            logger.error(f"Error deleting notification {notification_id}: {str(e)}", exc_info=True)
+            raise
     
     @staticmethod
     async def generate_due_date_notifications(db: AsyncSession) -> dict:

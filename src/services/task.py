@@ -11,11 +11,15 @@ from src.core.errors import (
     ERROR_ASSIGN_INACTIVE_USER
 )
 from src.core.permissions import require_owner_role, require_task_modification
+from src.core.logger import get_logger
 from src.models.task import Task
 from src.models.user import User, UserRole
 from src.repositories.task import TaskRepository
 from src.repositories.user import UserRepository
 from src.schemas.task import TaskCreate, TaskUpdate
+
+logger = get_logger(__name__)
+
 
 class TaskService:
     
@@ -60,12 +64,20 @@ class TaskService:
         """
         # Verify that the user is active
         if not current_user.is_active:
+            logger.warning(f"Inactive user {current_user.id} attempted to create task")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=ERROR_INACTIVE_USER_CREATE_TASK
             )
         
-        return await TaskRepository.create(db, task_data, current_user.id)
+        try:
+            logger.info(f"User {current_user.id} ({current_user.email}) creating task: {task_data.title}")
+            task = await TaskRepository.create(db, task_data, current_user.id)
+            logger.info(f"Task {task.id} created successfully by user {current_user.id}")
+            return task
+        except Exception as e:
+            logger.error(f"Error creating task for user {current_user.id}: {str(e)}", exc_info=True)
+            raise
     
     @staticmethod
     async def get_tasks_for_user(
@@ -119,11 +131,14 @@ class TaskService:
         Raises:
             HTTPException: 404 if task not found or not owned by user
         """
+        logger.debug(f"User {user.id} fetching task {task_id}")
         task = await TaskRepository.get_by_id_and_owner(
             db=db, id=task_id, owner_id=user.id
         )
         if not task:
+            logger.warning(f"Task {task_id} not found for user {user.id}")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ERROR_TASK_NOT_FOUND)
+        logger.debug(f"Task {task_id} retrieved successfully for user {user.id}")
         return task
     
 
@@ -191,12 +206,15 @@ class TaskService:
         - New owner must exist
         - New owner must be active
         """
+        logger.info(f"User {current_user.id} attempting to change owner of task {task_id} to user {new_owner_id}")
+        
         # Verify current user has OWNER role
         require_owner_role(current_user)
         
         # Verify that the task exists
         task = await TaskRepository.get_by_id(db, id=task_id)
         if not task:
+            logger.warning(f"Task {task_id} not found for ownership change")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ERROR_TASK_NOT_FOUND
@@ -205,6 +223,7 @@ class TaskService:
         # Verify that the new owner exists
         new_owner = await UserRepository.get_by_id(db, id=new_owner_id)
         if not new_owner:
+            logger.warning(f"New owner {new_owner_id} not found for task {task_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=ERROR_NEW_OWNER_NOT_FOUND
@@ -212,13 +231,16 @@ class TaskService:
         
         # Verify that the new owner is active
         if not new_owner.is_active:
+            logger.warning(f"Attempted to assign task {task_id} to inactive user {new_owner_id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_ASSIGN_INACTIVE_USER
             )
         
         # Update the task owner using repository
-        return await TaskRepository.change_owner(db, task, new_owner_id)
+        updated_task = await TaskRepository.change_owner(db, task, new_owner_id)
+        logger.info(f"Task {task_id} owner changed from {task.owner_id} to {new_owner_id} by user {current_user.id}")
+        return updated_task
     
     @staticmethod
     async def update_task(
@@ -245,8 +267,16 @@ class TaskService:
         Returns:
             Updated Task object
         """
+        logger.info(f"User {current_user.id} updating task {task_id}")
         task = await TaskService.get_task_for_action(db, task_id, current_user)
-        return await TaskRepository.update(db=db, db_obj=task, obj_in=task_in)
+        
+        try:
+            updated_task = await TaskRepository.update(db=db, db_obj=task, obj_in=task_in)
+            logger.info(f"Task {task_id} updated successfully by user {current_user.id}")
+            return updated_task
+        except Exception as e:
+            logger.error(f"Error updating task {task_id}: {str(e)}", exc_info=True)
+            raise
 
     @staticmethod
     async def delete_task(
@@ -268,6 +298,13 @@ class TaskService:
             task_id: ID of the task to delete
             current_user: Current authenticated user
         """
+        logger.info(f"User {current_user.id} deleting task {task_id}")
         task = await TaskService.get_task_for_action(db, task_id, current_user)
-        await TaskRepository.delete(db=db, db_obj=task)
+        
+        try:
+            await TaskRepository.delete(db=db, db_obj=task)
+            logger.info(f"Task {task_id} deleted successfully by user {current_user.id}")
+        except Exception as e:
+            logger.error(f"Error deleting task {task_id}: {str(e)}", exc_info=True)
+            raise
 

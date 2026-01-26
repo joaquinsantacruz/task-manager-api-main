@@ -65,7 +65,6 @@ Try out the application without any installation:
 - 📊 **Comprehensive Logging**: Backend and frontend logging with file rotation
 - 🧪 **Test Coverage**: 98 test cases with pytest
 - 🚀 **CI/CD Pipeline**: Automated testing and coverage reporting with CircleCI
-- 📱 **Responsive UI**: Mobile-friendly React interface
 - 🔄 **Real-time Updates**: Automatic notification polling
 - 📄 **API Documentation**: Auto-generated Swagger/OpenAPI documentation
 - 🐳 **Docker Support**: Containerized deployment with Docker Compose

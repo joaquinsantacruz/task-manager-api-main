@@ -821,8 +821,6 @@ id = Column(Integer, primary_key=True, index=True)  # Automatic
 
 ## What I Would Improve With More Time
 
-### High Priority
-
 #### 1. Refresh Token Implementation
 
 **Current:** Access tokens expire, but no refresh mechanism.
@@ -861,8 +859,6 @@ async def refresh_access_token(refresh_token: str):
 
 ---
 
-### Medium Priority
-
 #### 3. Caching Layer (Redis)
 
 **Current:** Every request hits the database.
@@ -896,7 +892,13 @@ async def refresh_access_token(refresh_token: str):
 
 ---
 
-#### 7. Monitoring and Observability
+#### 7. Responsive UI
+
+**Feature**: Mobile-friendly React interface
+
+---
+
+#### 8. Monitoring and Observability
 
 **Current:** Only logs to files.
 
@@ -908,21 +910,19 @@ async def refresh_access_token(refresh_token: str):
 
 ---
 
-### Lower Priority
-
-#### 8. Task Templates
+#### 9. Task Templates
 
 **Feature:** Save tasks as templates for reuse.
 
 ---
 
-#### 9. Task Dependencies
+#### 10. Task Dependencies
 
 **Feature:** Tasks can depend on other tasks.
 
 ---
 
-#### 10. Audit Log
+#### 11. Audit Log
 
 **Feature:** Track all changes to tasks.
 

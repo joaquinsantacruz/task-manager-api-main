@@ -2,14 +2,12 @@
 
 A full-stack task management application built with FastAPI and React, featuring role-based access control, real-time notifications, and comprehensive task collaboration tools.
 
-[![CircleCI](https://circleci.com/gh/YOUR_USERNAME/task-manager-api.svg?style=svg)](https://circleci.com/gh/YOUR_USERNAME/task-manager-api)
-[![Coverage Status](https://coveralls.io/repos/github/YOUR_USERNAME/task-manager-api/badge.svg?branch=main)](https://coveralls.io/github/YOUR_USERNAME/task-manager-api?branch=main)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/joaquinsantacruz/task-manager-api-main/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/joaquinsantacruz/task-manager-api-main/tree/main)
+[![Coverage Status](https://coveralls.io/repos/github/joaquinsantacruz/task-manager-api-main/badge.svg?branch=main)](https://coveralls.io/github/joaquinsantacruz/task-manager-api-main?branch=main)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.6-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB.svg?style=flat&logo=React&logoColor=white)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-3178C6.svg?style=flat&logo=TypeScript&logoColor=white)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?style=flat&logo=PostgreSQL&logoColor=white)](https://www.postgresql.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Table of Contents
 

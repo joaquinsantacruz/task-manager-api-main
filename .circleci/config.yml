@@ -46,8 +46,7 @@ jobs:
           command: uv run python -m pytest --cov=src --cov-report=lcov --cov-report=term
       
       # Upload coverage to Coveralls
-      - coveralls/upload:
-          path_to_lcov: ./coverage.lcov
+      - coveralls/upload
       
       - persist_to_workspace:
           root: ~/project

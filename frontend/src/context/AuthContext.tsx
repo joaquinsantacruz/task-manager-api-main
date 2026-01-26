@@ -2,6 +2,7 @@ import { createContext, useState, useContext, useEffect, ReactNode } from 'react
 import api from '../api/axios';
 import { AuthSession, User } from '../types';
 import { UserService } from '../services/userService';
+import logger from '../utils/logger';
 
 /**
  * Authentication Context Interface
@@ -64,12 +65,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
+      logger.info('Token found in localStorage, fetching user data');
       // Obtener información del usuario
       UserService.getCurrentUser()
         .then(userData => {
+          logger.info(`User authenticated: ${userData.email} (ID: ${userData.id})`);
           setUser({ token, user: userData });
         })
-        .catch(() => {
+        .catch((error) => {
+          logger.warn('Failed to fetch user data, using token only', error);
           // Si falla, solo guardar el token
           setUser({ token });
         })
@@ -77,12 +81,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setLoading(false);
         });
     } else {
+      logger.debug('No token found in localStorage');
       setLoading(false);
     }
   }, []);
 
   // 5. Tipamos los argumentos
   const login = async (username: string, password: string) => {
+    logger.logUserAction('login_attempt', { username });
+    
     const formData = new FormData();
     formData.append('username', username);
     formData.append('password', password);
@@ -95,25 +102,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const { access_token } = response.data;
       localStorage.setItem('token', access_token);
+      logger.info(`Login successful for user: ${username}`);
       
       // Obtener información del usuario después del login
       try {
         const userData = await UserService.getCurrentUser();
+        logger.info(`User data fetched: ${userData.email} (Role: ${userData.role})`);
         setUser({ token: access_token, user: userData });
-      } catch {
+      } catch (error) {
+        logger.warn('Could not fetch user data after login', error);
         setUser({ token: access_token });
       }
       
+      logger.logUserAction('login_success', { username });
       return { success: true };
     } catch (error: any) { // 6. Manejo de error (any o unknown)
       const errorMessage = error.response?.data?.detail || 'Login failed';
+      logger.error(`Login failed for user: ${username}`, errorMessage);
+      logger.logUserAction('login_failure', { username, error: errorMessage });
       return { success: false, error: errorMessage };
     }
   };
 
   const logout = () => {
+    logger.logUserAction('logout', { user: user?.user?.email });
     localStorage.removeItem('token');
     setUser(null);
+    logger.info('User logged out');
   };
 
   return (

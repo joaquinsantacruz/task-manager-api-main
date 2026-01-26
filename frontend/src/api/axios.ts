@@ -1,4 +1,5 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
+import logger from '../utils/logger';
 
 /**
  * Axios API Client Configuration
@@ -14,11 +15,13 @@ import axios, { InternalAxiosRequestConfig } from 'axios';
  *   - Automatically adds JWT token from localStorage to Authorization header
  *   - Token format: "Bearer {token}"
  *   - Applied to all outgoing requests
+ *   - Logs all outgoing requests for debugging
  * 
  * Response Interceptor:
  *   - Handles 401 (Unauthorized) and 403 (Forbidden) errors
  *   - Automatically logs out user and redirects to /login
  *   - Clears token from localStorage on authentication failure
+ *   - Logs all responses and errors
  * 
  * Usage:
  *   ```typescript
@@ -43,13 +46,36 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Log outgoing request
+  logger.logRequest(config.method || 'GET', config.url || '', config.data);
+  
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful response
+    logger.logResponse(
+      response.config.method || 'GET',
+      response.config.url || '',
+      response.status
+    );
+    return response;
+  },
   (error) => {
+    // Log error response
+    if (error.response) {
+      logger.error(
+        `API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - Status: ${error.response.status}`,
+        error.response.data
+      );
+    } else {
+      logger.error(`Network Error: ${error.message}`, error);
+    }
+    
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      logger.warn(`Authentication error, redirecting to login`);
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

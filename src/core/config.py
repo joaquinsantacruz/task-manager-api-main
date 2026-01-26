@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # - CORS origins
     CORS_ORIGINS: List[str] = []
     
+    DEBUG: bool = False
+
     model_config = SettingsConfigDict(
         env_file = ".env",
         case_sensitive = False,

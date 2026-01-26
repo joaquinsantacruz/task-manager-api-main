@@ -34,3 +34,8 @@ jobs:
           root: ~/project
           paths:
             - .
+
+workflows:
+  build_test_deploy:
+    jobs:
+      - build_and_test

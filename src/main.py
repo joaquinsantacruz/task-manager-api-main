@@ -17,12 +17,6 @@ app.add_middleware(
 )
 
 
-# TODO: Implement your API
-# Consider:
-# - Authentication endpoints
-# - Task CRUD operations
-# - Project management
-# - Permission checking
 # - Health check endpoint
 
 app.include_router(login.router, prefix=settings.API_V1_STR, tags=["login"])

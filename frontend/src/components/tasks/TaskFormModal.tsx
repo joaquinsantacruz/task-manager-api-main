@@ -21,11 +21,11 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit }: TaskFormMod
 
     // Validate due date is not in the past
     if (dueDate) {
-      const selectedDate = new Date(dueDate);
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(`${dueDate}T00:00:00`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       
-      if (selectedDate < now) {
+      if (selectedDate < today) {
         alert('La fecha de vencimiento no puede ser en el pasado');
         return;
       }

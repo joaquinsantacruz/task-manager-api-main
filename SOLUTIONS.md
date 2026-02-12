@@ -1011,6 +1011,8 @@ npm run test
 
 Once running, access the application at:
 
+> **Note:** The app is not deployed at the moment and is currently offline. Use the local URLs below after starting the services.
+
 | Service | URL | Description |
 |---------|-----|-------------|
 | **Frontend** | http://localhost:5173 | React UI |

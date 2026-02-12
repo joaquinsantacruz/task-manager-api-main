@@ -1,16 +1,16 @@
-# Task Manager - Inicio Rápido 🚀
+# Task Manager - Quick Start
 
-¡Levanta toda la aplicación con un solo comando!
+Bring the entire application up with a single command.
 
-## 📋 Requisitos Previos
+## Prerequisites
 
-Antes de empezar, asegúrate de tener instalado:
+Before you start, make sure you have installed:
 
-- ✅ **Docker Desktop** (instalado y en ejecución)
-- ✅ **Node.js** y **npm** (v18 o superior)
-- ✅ **Python 3.13+** y **uv** (gestor de paquetes)
+- Docker Desktop (installed and running)
+- Node.js and npm (v18 or higher)
+- Python 3.13+ and uv (package manager)
 
-### Instalar uv (si no lo tienes)
+### Install uv (if you do not have it)
 
 **Windows (PowerShell):**
 ```powershell
@@ -24,7 +24,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ---
 
-## 🚀 Inicio Rápido con UN SOLO COMANDO
+## Quick Start With ONE COMMAND
+
+> **Note:** Bash scripts are not tested and may not work correctly in this version.
 
 ### Windows (PowerShell)
 
@@ -35,57 +37,59 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### Linux/macOS (Bash)
 
 ```bash
-# Dar permisos de ejecución (solo la primera vez)
+# Give execute permissions (only the first time)
 chmod +x start.sh
 
-# Iniciar
+# Start
 ./start.sh
 ```
 
-**¡Eso es todo!** El script automáticamente:
+That's it. The script automatically:
 
-1. ✅ Verifica que Docker esté corriendo
-2. ✅ Inicia la base de datos PostgreSQL
-3. ✅ Espera a que la BD esté lista
-4. ✅ Instala dependencias del backend
-5. ✅ Inicia el servidor backend
-6. ✅ Instala dependencias del frontend
-7. ✅ Inicia el servidor frontend
-
----
-
-## 🌐 Acceder a la Aplicación
-
-Una vez iniciado, los servicios estarán disponibles en:
-
-| Servicio | URL | Descripción |
-|----------|-----|-------------|
-| **Frontend** | http://localhost:5173 | Interfaz de usuario React |
-| **Backend API** | http://localhost:8000 | API REST FastAPI |
-| **API Docs** | http://localhost:8000/docs | Documentación Swagger |
-| **Base de Datos** | localhost:5432 | PostgreSQL |
-
-### Credenciales por defecto
-
-**Usuario Owner:**
-- Email: `owner@example.com`
-- Password: `ownerpass`
-
-**Usuario Member:**
-- Email: `member@example.com`
-- Password: `memberpass`
+1. Verifies Docker is running
+2. Starts the PostgreSQL database
+3. Waits for the database to be ready
+4. Installs backend dependencies
+5. Starts the backend server
+6. Installs frontend dependencies
+7. Starts the frontend server
 
 ---
 
-## 🛑 Detener la Aplicación
+## Access the Application
 
-### Opción 1: Detener solo Frontend y Backend
+> **Note:** The app is not deployed at the moment and is currently offline. Use the local URLs below after starting the services.
 
-Presiona `Ctrl+C` en la terminal donde ejecutaste el script de inicio.
+Once started, the services will be available at:
 
-> **Nota:** La base de datos seguirá corriendo en Docker.
+| Service | URL | Description |
+|---------|-----|-------------|
+| Frontend | http://localhost:5173 | React user interface |
+| Backend API | http://localhost:8000 | FastAPI REST API |
+| API Docs | http://localhost:8000/docs | Swagger documentation |
+| Database | localhost:5432 | PostgreSQL |
 
-### Opción 2: Detener TODO (incluyendo la base de datos)
+### Default credentials
+
+**Owner user:**
+- Email: `admin@admin.com`
+- Password: `admin123`
+
+**Member user:**
+- Email: `john.doe@example.com`
+- Password: `password123`
+
+---
+
+## Stop the Application
+
+### Option 1: Stop only Frontend and Backend
+
+Press `Ctrl+C` in the terminal where you ran the start script.
+
+> **Note:** The database will keep running in Docker.
+
+### Option 2: Stop EVERYTHING (including the database)
 
 **Windows:**
 ```powershell
@@ -99,74 +103,74 @@ Presiona `Ctrl+C` en la terminal donde ejecutaste el script de inicio.
 
 ---
 
-## 🔧 Comandos Manuales (Alternativa)
+## Manual Commands (Alternative)
 
-Si prefieres iniciar los servicios manualmente:
+If you prefer to start the services manually:
 
-### 1. Base de datos
+### 1. Database
 ```bash
 docker-compose up -d db
 ```
 
 ### 2. Backend
 ```bash
-uv sync                                    # Instalar dependencias
-uv run uvicorn src.main:app --reload      # Iniciar servidor
+uv sync                                    # Install dependencies
+uv run uvicorn src.main:app --reload      # Start server
 ```
 
 ### 3. Frontend
 ```bash
 cd frontend
-npm install                                # Instalar dependencias
-npm run dev                                # Iniciar servidor
+npm install                                # Install dependencies
+npm run dev                                # Start server
 ```
 
 ---
 
-## 🔍 Solución de Problemas
+## Troubleshooting
 
-### ❌ "Docker no está corriendo"
+### "Docker is not running"
 
-**Problema:** El script no puede conectarse a Docker.
+**Problem:** The script cannot connect to Docker.
 
-**Solución:**
-1. Abre Docker Desktop
-2. Espera a que el ícono de Docker en la barra de tareas esté verde
-3. Vuelve a ejecutar el script
+**Solution:**
+1. Open Docker Desktop
+2. Wait for the Docker icon in the taskbar to turn green
+3. Run the script again
 
 ---
 
-### ❌ Puerto ya en uso
+### Port already in use
 
-**Problema:** Error indicando que un puerto (5432, 8000, 5173) ya está en uso.
+**Problem:** Error indicating a port (5432, 8000, 5173) is already in use.
 
-**Solución Windows:**
+**Windows solution:**
 ```powershell
-# Ver qué proceso usa el puerto
+# See which process uses the port
 netstat -ano | findstr :8000
 
-# Matar el proceso (reemplaza <PID> con el número mostrado)
+# Kill the process (replace <PID> with the number shown)
 taskkill /PID <PID> /F
 ```
 
-**Solución Linux/macOS:**
+**Linux/macOS solution:**
 ```bash
-# Ver qué proceso usa el puerto
+# See which process uses the port
 lsof -i :8000
 
-# Matar el proceso
+# Kill the process
 kill -9 <PID>
 ```
 
 ---
 
-### ❌ "uv: command not found"
+### "uv: command not found"
 
-**Problema:** uv no está instalado o no está en el PATH.
+**Problem:** uv is not installed or not in PATH.
 
-**Solución:**
+**Solution:**
 ```powershell
-# Windows (PowerShell como Administrador)
+# Windows (PowerShell as Administrator)
 irm https://astral.sh/uv/install.ps1 | iex
 ```
 
@@ -175,34 +179,34 @@ irm https://astral.sh/uv/install.ps1 | iex
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Luego, reinicia la terminal.
+Then restart the terminal.
 
 ---
 
-### ❌ Base de datos no se conecta
+### Database does not connect
 
-**Problema:** El backend no puede conectarse a PostgreSQL.
+**Problem:** The backend cannot connect to PostgreSQL.
 
-**Solución:**
+**Solution:**
 ```bash
-# Ver logs de la base de datos
+# View database logs
 docker-compose logs db
 
-# Reiniciar la base de datos
+# Restart the database
 docker-compose restart db
 
-# O detener y volver a iniciar
+# Or stop and start again
 docker-compose down
 docker-compose up -d db
 ```
 
 ---
 
-### ❌ Errores en dependencias de npm
+### npm dependency errors
 
-**Problema:** El frontend no instala correctamente las dependencias.
+**Problem:** The frontend does not install dependencies correctly.
 
-**Solución:**
+**Solution:**
 ```bash
 cd frontend
 rm -rf node_modules package-lock.json
@@ -211,43 +215,43 @@ npm install
 
 ---
 
-## 📝 Ver Logs
+## View Logs
 
 ### Backend
-Los logs del backend se muestran en la terminal.
+Backend logs show in the terminal.
 
-**Linux/macOS:** También se guardan en `backend.log`
+**Linux/macOS:** They are also saved in `backend.log`
 
 ### Frontend
-Los logs de Vite se muestran en la terminal.
+Vite logs show in the terminal.
 
-### Base de datos
+### Database
 ```bash
 docker-compose logs db
-docker-compose logs -f db    # Seguir logs en tiempo real
+docker-compose logs -f db    # Follow logs in real time
 ```
 
 ---
 
-## 🔄 Reiniciar un Servicio Individual
+## Restart an Individual Service
 
-### Solo la base de datos
+### Only the database
 ```bash
 docker-compose restart db
 ```
 
-### Solo el backend
+### Only the backend
 ```bash
-# Detener (encontrar PID y matar proceso)
-# Windows: Ctrl+C o Task Manager
-# Linux/macOS: 
+# Stop (find PID and kill the process)
+# Windows: Ctrl+C or Task Manager
+# Linux/macOS:
 pkill -f uvicorn
 
-# Iniciar
+# Start
 uv run uvicorn src.main:app --reload
 ```
 
-### Solo el frontend
+### Only the frontend
 ```bash
 cd frontend
 npm run dev
@@ -255,21 +259,21 @@ npm run dev
 
 ---
 
-## 📚 Documentación Adicional
+## Additional Documentation
 
-- **[README_SCRIPTS.md](README_SCRIPTS.md)** - Documentación detallada de los scripts
-- **[initial_README.md](initial_README.md)** - Documentación completa del proyecto
-- **API Docs:** http://localhost:8000/docs (cuando el backend esté corriendo)
+- [README_SCRIPTS.md](README_SCRIPTS.md) - Detailed script documentation
+- [initial_README.md](initial_README.md) - Full project documentation
+- API Docs: http://localhost:8000/docs (when the backend is running)
 
 ---
 
-## 💡 Tips
+## Tips
 
-- Los cambios en el código se recargan automáticamente (hot-reload)
-- El backend tiene **Swagger UI** en http://localhost:8000/docs
-- Puedes inspeccionar la base de datos con cualquier cliente PostgreSQL:
+- Code changes reload automatically (hot reload)
+- The backend has Swagger UI at http://localhost:8000/docs
+- You can inspect the database with any PostgreSQL client:
   - Host: `localhost`
-  - Puerto: `5432`
-  - Usuario: `taskuser`
+  - Port: `5432`
+  - User: `taskuser`
   - Password: `taskpass`
   - Database: `taskmanager`

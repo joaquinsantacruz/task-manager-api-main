@@ -1,66 +1,70 @@
-# Scripts de Inicio Rápido
+# Quick Start Scripts
 
-Este proyecto incluye scripts para facilitar el inicio y detención de todos los servicios con un solo comando.
+This project includes scripts to make it easy to start and stop all services with a single command.
 
-## 📋 Requisitos Previos
+## Prerequisites
 
-- Docker Desktop instalado y en ejecución
-- Node.js y npm instalados
-- Python 3.13+ y uv instalados
+- Docker Desktop installed and running
+- Node.js and npm installed
+- Python 3.13+ and uv installed
 
-## 🚀 Inicio Rápido
+## Quick Start
+
+> **Note:** Bash scripts are not tested and may not work correctly in this version.
 
 ### Windows (PowerShell)
 
 ```powershell
-# Iniciar todos los servicios
+# Start all services
 .\start.ps1
 
-# Detener todos los servicios (en otra terminal)
+# Stop all services (in another terminal)
 .\stop.ps1
 ```
 
 ### Linux/macOS (Bash)
 
 ```bash
-# Dar permisos de ejecución (solo la primera vez)
+# Give execute permissions (only the first time)
 chmod +x start.sh stop.sh
 
-# Iniciar todos los servicios
+# Start all services
 ./start.sh
 
-# Detener todos los servicios (en otra terminal)
+# Stop all services (in another terminal)
 ./stop.sh
 ```
 
-## 🔧 ¿Qué hace el script de inicio?
+## What does the start script do?
 
-El script `start.ps1` / `start.sh` automatiza los siguientes pasos:
+The `start.ps1` / `start.sh` script automates the following steps:
 
-1. **Verifica Docker**: Confirma que Docker esté corriendo
-2. **Inicia la base de datos**: Levanta PostgreSQL con `docker-compose up -d db`
-3. **Espera la base de datos**: Verifica que PostgreSQL esté listo para aceptar conexiones
-4. **Instala dependencias del backend**: Ejecuta `uv sync`
-5. **Inicia el backend**: Corre `uv run uvicorn src.main:app --reload` en segundo plano
-6. **Instala dependencias del frontend**: Ejecuta `npm install` si es necesario
-7. **Inicia el frontend**: Corre `npm run dev`
+1. **Check Docker**: Confirms Docker is running
+2. **Start the database**: Brings up PostgreSQL with `docker-compose up -d db`
+3. **Wait for the database**: Verifies PostgreSQL is ready to accept connections
+4. **Install backend dependencies**: Runs `uv sync`
+5. **Start the backend**: Runs `uv run uvicorn src.main:app --reload` in the background
+6. **Install frontend dependencies**: Runs `npm install` if needed
+7. **Start the frontend**: Runs `npm run dev`
 
-## 🌐 Servicios Disponibles
+## Available Services
 
-Una vez iniciados, los servicios estarán disponibles en:
+> **Note:** The app is not deployed at the moment and is currently offline. Use the local URLs below after starting the services.
 
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Base de datos PostgreSQL**: localhost:5432
+Once started, the services will be available at:
 
-## 🛑 Detener los Servicios
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- PostgreSQL database: localhost:5432
 
-### Opción 1: Ctrl+C
-Presiona `Ctrl+C` en la terminal donde se está ejecutando el script de inicio. Esto detendrá el frontend y el backend, pero la base de datos seguirá corriendo.
+## Stop the Services
 
-### Opción 2: Script de detención
-Ejecuta el script `stop.ps1` (Windows) o `stop.sh` (Linux/macOS) en otra terminal para detener todos los servicios incluyendo la base de datos.
+### Option 1: Ctrl+C
+Press `Ctrl+C` in the terminal where the start script is running. This will stop the frontend and backend, but the database will keep running.
+
+### Option 2: Stop script
+Run `stop.ps1` (Windows) or `stop.sh` (Linux/macOS) in another terminal to stop all services including the database.
 
 ```powershell
 # Windows
@@ -72,16 +76,16 @@ Ejecuta el script `stop.ps1` (Windows) o `stop.sh` (Linux/macOS) en otra termina
 ./stop.sh
 ```
 
-## 🔍 Solución de Problemas
+## Troubleshooting
 
-### Docker no está corriendo
+### Docker is not running
 ```
-ERROR: Docker no está corriendo. Por favor inicia Docker Desktop.
+ERROR: Docker is not running. Please start Docker Desktop.
 ```
-**Solución**: Inicia Docker Desktop y espera a que esté completamente cargado antes de ejecutar el script.
+**Solution**: Start Docker Desktop and wait until it is fully loaded before running the script.
 
-### Puerto ya en uso
-Si algún puerto (5432, 8000, 5173) está en uso:
+### Port already in use
+If any port (5432, 8000, 5173) is in use:
 
 ```bash
 # Windows
@@ -93,10 +97,10 @@ lsof -i :8000
 kill -9 <PID>
 ```
 
-### Problemas con uv
-Si `uv` no está instalado:
+### uv issues
+If `uv` is not installed:
 
-```bash
+```powershell
 # Windows (PowerShell)
 irm https://astral.sh/uv/install.ps1 | iex
 
@@ -104,8 +108,8 @@ irm https://astral.sh/uv/install.ps1 | iex
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Problemas con npm
-Si las dependencias del frontend no se instalan correctamente:
+### npm issues
+If frontend dependencies do not install correctly:
 
 ```bash
 cd frontend
@@ -113,30 +117,30 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-## 📝 Logs
+## Logs
 
-- **Backend logs**: Se muestran en la terminal o en `backend.log` (Linux/macOS)
-- **Frontend logs**: Se muestran en la terminal
-- **Database logs**: `docker-compose logs db`
+- Backend logs: Shown in the terminal or in `backend.log` (Linux/macOS)
+- Frontend logs: Shown in the terminal
+- Database logs: `docker-compose logs db`
 
-## 🔄 Reiniciar un Servicio Individual
+## Restart an Individual Service
 
-### Solo la base de datos
+### Only the database
 ```bash
 docker-compose restart db
 ```
 
-### Solo el backend
+### Only the backend
 ```bash
-# Detener
+# Stop
 pkill -f uvicorn  # Linux/macOS
-# o encontrar el proceso en Windows y matarlo
+# Or find the process on Windows and kill it
 
-# Iniciar
+# Start
 uv run uvicorn src.main:app --reload
 ```
 
-### Solo el frontend
+### Only the frontend
 ```bash
 cd frontend
 npm run dev

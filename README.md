@@ -38,6 +38,8 @@ The application supports two user roles:
 
 Try out the application without any installation:
 
+> **Note:** The app is not deployed at the moment and is currently offline.
+
 ### 🌐 Full Application
 - **Production URL**: [https://task-manager-api-main.vercel.app/](https://task-manager-api-main.vercel.app/)
 - **Hosting**: Vercel (Frontend) + Heroku (Backend)
@@ -222,6 +224,8 @@ npm install
 
 For a simplified one-command setup, see **[QUICKSTART.md](QUICKSTART.md)**, which provides automated scripts to start the entire application stack on Windows, Linux, or macOS.
 
+> **Note:** Bash scripts are not tested and may not work correctly in this version.
+
 ### Conventional Setup
 
 If you prefer to start services manually or need more control over the process, follow these conventional methods:
@@ -378,7 +382,7 @@ All endpoints (except `/login/access-token`) require JWT authentication.
 POST /api/v1/login/access-token
 Content-Type: application/x-www-form-urlencoded
 
-username=owner@example.com&password=ownerpass123
+username=admin@admin.com&password=admin123
 ```
 
 **Response:**

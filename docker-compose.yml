@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:18-alpine
+    build: ./db
     container_name: taskmanager_db
     environment:
       POSTGRES_USER: taskuser
@@ -18,20 +18,27 @@ services:
 
   api:
     build: .
+    container_name: taskmanager_api
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://taskuser:taskpass@db:5432/taskmanager
       SECRET_KEY: dev-secret-key-change-in-production
       ALGORITHM: HS256
-      CORS_ORIGINS: '["http://localhost:5173"]' 
+      # CORS_ORIGINS will include localhost where the frontend runs
+      CORS_ORIGINS: '["http://localhost", "http://localhost:5173", "http://localhost:8000"]'
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./src:/app/src
-      - ./tests:/app/tests
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build: ./frontend
+    container_name: taskmanager_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

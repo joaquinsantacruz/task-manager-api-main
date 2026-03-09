@@ -31,40 +31,27 @@ export default function CommentForm({ onSubmit, placeholder = 'Escribe un coment
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ marginBottom: '1rem' }}>
+    <form onSubmit={handleSubmit} className="mb-4">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={placeholder}
         disabled={isSubmitting}
-        style={{
-          width: '100%',
-          minHeight: '80px',
-          padding: '0.75rem',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          fontSize: '0.95rem',
-          fontFamily: 'inherit',
-          resize: 'vertical',
-          marginBottom: '0.5rem'
-        }}
+        className="w-full min-h-[80px] p-3 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-y mb-2 outline-none"
       />
-      <button
-        type="submit"
-        disabled={isSubmitting || content.trim() === ''}
-        style={{
-          padding: '0.5rem 1.5rem',
-          border: 'none',
-          borderRadius: '4px',
-          background: content.trim() === '' ? '#ccc' : '#007bff',
-          color: 'white',
-          cursor: content.trim() === '' ? 'not-allowed' : 'pointer',
-          fontSize: '0.95rem',
-          fontWeight: 'bold'
-        }}
-      >
-        {isSubmitting ? 'Enviando...' : 'Comentar'}
-      </button>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={isSubmitting || content.trim() === ''}
+          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+            content.trim() === '' || isSubmitting
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm hover:shadow active:scale-95 cursor-pointer'
+          }`}
+        >
+          {isSubmitting ? 'Enviando...' : 'Comentar'}
+        </button>
+      </div>
     </form>
   );
 }

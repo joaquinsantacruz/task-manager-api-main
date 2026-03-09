@@ -77,10 +77,10 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit }: TaskFormMod
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Nueva Tarea">
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="title" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-            Título <span style={{ color: 'red' }}>*</span>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="title" className="block mb-1 font-bold text-gray-700">
+            Título <span className="text-red-500">*</span>
           </label>
           <input
             id="title"
@@ -89,18 +89,12 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit }: TaskFormMod
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Título de la tarea"
             required
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '1rem'
-            }}
+            className="input-field"
           />
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="description" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+        <div>
+          <label htmlFor="description" className="block mb-1 font-bold text-gray-700">
             Descripción
           </label>
           <textarea
@@ -109,32 +103,19 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit }: TaskFormMod
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Descripción de la tarea (opcional)"
             rows={4}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '1rem',
-              resize: 'vertical'
-            }}
+            className="input-field resize-y"
           />
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="status" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+        <div>
+          <label htmlFor="status" className="block mb-1 font-bold text-gray-700">
             Estado
           </label>
           <select
             id="status"
             value={status}
             onChange={(e) => setStatus(e.target.value as TaskStatus)}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '1rem'
-            }}
+            className="input-field"
           >
             <option value="todo">Por Hacer</option>
             <option value="in_progress">En Progreso</option>
@@ -142,8 +123,8 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit }: TaskFormMod
           </select>
         </div>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label htmlFor="dueDate" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+        <div>
+          <label htmlFor="dueDate" className="block mb-1 font-bold text-gray-700">
             Fecha de Vencimiento
           </label>
           <input
@@ -152,46 +133,26 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit }: TaskFormMod
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             min={today}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '1rem'
-            }}
+            className="input-field"
           />
-          <small style={{ color: '#666', fontSize: '0.85rem' }}>
+          <small className="text-gray-500 text-xs mt-1 block">
             Opcional - Recibirás notificaciones cuando se acerque la fecha
           </small>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+        <div className="flex gap-4 justify-end pt-4 border-t border-gray-100">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              background: 'white',
-              cursor: 'pointer'
-            }}
+            className="btn-secondary"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSubmitting || !title.trim()}
-            style={{
-              padding: '0.5rem 1rem',
-              border: 'none',
-              borderRadius: '4px',
-              background: '#007bff',
-              color: 'white',
-              cursor: isSubmitting || !title.trim() ? 'not-allowed' : 'pointer',
-              opacity: isSubmitting || !title.trim() ? 0.6 : 1
-            }}
+            className={`btn-primary ${isSubmitting || !title.trim() ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             {isSubmitting ? 'Creando...' : 'Crear Tarea'}
           </button>

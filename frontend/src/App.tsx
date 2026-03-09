@@ -6,7 +6,6 @@ import Login from './pages/Login';
 import Tasks from './pages/Tasks';
 import Notifications from './pages/Notifications';
 import { NotificationBell } from './components/notifications';
-import './App.css';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -44,74 +43,66 @@ function AppContent() {
   };
 
   return (
-    <div className="App">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       {/* El header se mostrará en todas las páginas */}
-      <header style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: '1rem 2rem',
-        backgroundColor: '#282c34',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
-        <h1 style={{ margin: 0 }}>Task Manager</h1>
-        
-        {user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-            <nav style={{ display: 'flex', gap: '1.5rem' }}>
-              <Link 
-                to="/tasks"
-                style={{
-                  textDecoration: 'none',
-                  color: location.pathname === '/tasks' ? '#007bff' : 'white',
-                  fontWeight: location.pathname === '/tasks' ? 'bold' : 'normal',
-                  padding: '0.5rem 1rem'
-                }}
-              >
-                Tareas
-              </Link>
-              <Link 
-                to="/notifications"
-                style={{
-                  textDecoration: 'none',
-                  color: location.pathname === '/notifications' ? '#007bff' : 'white',
-                  fontWeight: location.pathname === '/notifications' ? 'bold' : 'normal',
-                  padding: '0.5rem 1rem'
-                }}
-              >
-                Notificaciones
-              </Link>
-            </nav>
+      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 text-gray-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-900 tracking-tight">Task Manager</h1>
+            
+            {user && (
+              <div className="flex items-center space-x-6">
+                <nav className="flex space-x-2">
+                  <Link 
+                    to="/tasks"
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === '/tasks' 
+                        ? 'bg-primary-50 text-primary-700' 
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    Tareas
+                  </Link>
+                  <Link 
+                    to="/notifications"
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === '/notifications' 
+                        ? 'bg-primary-50 text-primary-700' 
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    Notificaciones
+                  </Link>
+                </nav>
 
-            <NotificationBell
-              notifications={notifications}
-              unreadCount={unreadCount}
-              onMarkAsRead={markAsRead}
-              onDelete={deleteNotification}
-              onViewAll={handleNotificationClick}
-            />
+                <div className="text-gray-500 hover:text-primary-600 transition-colors">
+                  <NotificationBell
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    onMarkAsRead={markAsRead}
+                    onDelete={deleteNotification}
+                    onViewAll={handleNotificationClick}
+                  />
+                </div>
 
-            <button 
-              onClick={logout} 
-              style={{ 
-                background: '#333', 
-                color: 'white', 
-                padding: '0.5rem 1rem', 
-                border: 'none', 
-                borderRadius: '4px', 
-                cursor: 'pointer' 
-              }}
-            >
-              Cerrar Sesión
-            </button>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {user?.user?.email}
+                  </span>
+                  <button 
+                    onClick={logout} 
+                    className="btn-secondary text-sm"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </header>
 
-      <main>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Routes>
           {/* Ruta Pública */}
           <Route path="/login" element={<Login />} />

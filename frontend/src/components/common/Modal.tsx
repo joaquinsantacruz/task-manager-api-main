@@ -64,45 +64,18 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
 
   return (
     <div 
-      className="modal-overlay" 
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" 
       onClick={onClose}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000
-      }}
     >
       <div 
-        className="modal-content"
+        className="bg-white p-8 rounded-2xl shadow-2xl min-w-[400px] max-w-[600px] max-h-[85vh] overflow-auto transform transition-all animate-slide-up"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: 'white',
-          padding: '2rem',
-          borderRadius: '8px',
-          minWidth: '400px',
-          maxWidth: '600px',
-          maxHeight: '80vh',
-          overflow: 'auto'
-        }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ margin: 0 }}>{title}</h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 m-0">{title}</h2>
           <button 
             onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              fontSize: '1.5rem',
-              cursor: 'pointer',
-              color: '#666'
-            }}
+            className="text-gray-400 hover:text-gray-600 bg-transparent hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center text-xl transition-colors"
           >
             ×
           </button>

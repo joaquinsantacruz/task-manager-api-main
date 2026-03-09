@@ -57,28 +57,33 @@ export default function TaskDetailModal({ isOpen, onClose, task, onChangeStatus,
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalle de Tarea">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="flex flex-col gap-6">
         <div>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#666', fontSize: '0.875rem' }}>
+          <label className="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wider">
             TÍTULO
           </label>
-          <p style={{ margin: 0, fontSize: '1.1rem' }}>{task.title}</p>
+          <p className="text-lg text-gray-900">{task.title}</p>
         </div>
 
         {task.description && (
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#666', fontSize: '0.875rem' }}>
+            <label className="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wider">
               DESCRIPCIÓN
             </label>
-            <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{task.description}</p>
+            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">{task.description}</p>
           </div>
         )}
 
         <div>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#666', fontSize: '0.875rem' }}>
+          <label className="block mb-1 text-xs font-bold text-gray-500 uppercase tracking-wider">
             ESTADO
           </label>
-          <p style={{ margin: 0 }}>{statusLabels[task.status]}</p>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+            ${task.status === 'done' ? 'bg-green-100 text-green-800' : 
+              task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 
+              'bg-gray-100 text-gray-800'}`}>
+            {statusLabels[task.status]}
+          </span>
         </div>
 
         <TaskDueDateEditor
@@ -106,32 +111,26 @@ export default function TaskDetailModal({ isOpen, onClose, task, onChangeStatus,
           onSelectOwner={ownerEditor.setSelectedOwnerId}
         />
 
-        <div style={{ borderTop: '2px solid #eee', paddingTop: '1.5rem' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#333' }}>Comentarios</h3>
+        <div className="border-t-2 border-gray-100 pt-6 mt-2">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Comentarios</h3>
           <CommentForm onSubmit={createComment} />
-          <CommentList
-            comments={comments}
-            currentUserId={currentUserId}
-            loading={commentsLoading}
-            onUpdate={updateComment}
-            onDelete={deleteComment}
-          />
+          <div className="mt-6">
+            <CommentList
+              comments={comments}
+              currentUserId={currentUserId}
+              loading={commentsLoading}
+              onUpdate={updateComment}
+              onDelete={deleteComment}
+            />
+          </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #eee' }}>
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
           <TaskStatusButtons currentStatus={task.status} onStatusChange={handleStatusChange} />
 
           <button
             onClick={onClose}
-            style={{
-              padding: '0.5rem 1.5rem',
-              border: 'none',
-              borderRadius: '4px',
-              background: '#007bff',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '1rem'
-            }}
+            className="btn-secondary"
           >
             Cerrar
           </button>

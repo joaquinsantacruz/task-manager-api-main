@@ -102,92 +102,34 @@ export default function NotificationBell({
   const recentNotifications = notifications.slice(0, 5);
 
   return (
-    <div style={{ position: 'relative' }} ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          position: 'relative',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '0.5rem',
-          fontSize: '1.5rem',
-          color: '#333'
-        }}
+        className="relative bg-transparent border-none cursor-pointer p-2 text-2xl text-gray-700 hover:text-primary-600 transition-colors"
         title="Notificaciones"
       >
-        🔔
+        <span role="img" aria-label="Notificaciones">🔔</span>
         {unreadCount > 0 && (
-          <span style={{
-            position: 'absolute',
-            top: '0',
-            right: '0',
-            background: '#dc3545',
-            color: 'white',
-            borderRadius: '50%',
-            width: '20px',
-            height: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.7rem',
-            fontWeight: 'bold'
-          }}>
+          <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[0.7rem] font-bold shadow-sm border-2 border-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          right: '0',
-          marginTop: '0.5rem',
-          width: '400px',
-          maxHeight: '500px',
-          backgroundColor: 'white',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          zIndex: 1000,
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <div style={{
-            padding: '1rem',
-            borderBottom: '1px solid #eee',
-            fontWeight: 'bold',
-            fontSize: '1.1rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <span>Notificaciones</span>
+        <div className="absolute top-full right-0 mt-2 w-96 max-h-[500px] bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col animate-fade-in">
+          <div className="p-4 border-b border-gray-100 font-bold text-lg flex justify-between items-center bg-gray-50/80 backdrop-blur-sm">
+            <span className="text-gray-900 tracking-tight">Notificaciones</span>
             {unreadCount > 0 && (
-              <span style={{
-                fontSize: '0.85rem',
-                color: '#007bff',
-                fontWeight: 'normal'
-              }}>
+              <span className="text-sm text-primary-600 font-medium bg-primary-50 px-2 py-0.5 rounded-full">
                 {unreadCount} sin leer
               </span>
             )}
           </div>
 
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '0.5rem'
-          }}>
+          <div className="flex-1 overflow-y-auto p-2">
             {recentNotifications.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '2rem',
-                color: '#999',
-                fontStyle: 'italic'
-              }}>
+              <div className="text-center p-8 text-gray-400 italic">
                 No tienes notificaciones
               </div>
             ) : (
@@ -204,24 +146,13 @@ export default function NotificationBell({
           </div>
 
           {notifications.length > 5 && onViewAll && (
-            <div style={{
-              borderTop: '1px solid #eee',
-              padding: '0.75rem',
-              textAlign: 'center'
-            }}>
+            <div className="border-t border-gray-100 p-3 text-center bg-gray-50/50">
               <button
                 onClick={() => {
                   setIsOpen(false);
                   onViewAll();
                 }}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#007bff',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  fontWeight: 'bold'
-                }}
+                className="bg-transparent border-none text-primary-600 hover:text-primary-700 cursor-pointer text-sm font-bold transition-colors"
               >
                 Ver todas las notificaciones
               </button>

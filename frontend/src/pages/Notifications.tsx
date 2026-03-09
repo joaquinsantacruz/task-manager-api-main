@@ -32,13 +32,8 @@ export default function Notifications() {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      paddingTop: '2rem',
-      paddingBottom: '2rem'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+    <div className="min-h-screen bg-gray-50 py-8 animate-fade-in animate-slide-up">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <NotificationList
           notifications={notifications}
           loading={loading}

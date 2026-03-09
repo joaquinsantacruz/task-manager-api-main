@@ -130,23 +130,17 @@ export default function Tasks() {
   }, [selectedStatuses]);
 
   return (
-    <div className="tasks-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ margin: 0 }}>Mis Tareas</h1>
+    <div className="animate-fade-in">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Mis Tareas</h1>
         <button 
           onClick={() => setIsModalOpen(true)}
-          style={{
-            padding: '0.75rem 1.5rem',
-            background: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            fontWeight: 'bold'
-          }}
+          className="btn-primary flex items-center gap-2 shadow-md hover:shadow-lg transform transition hover:-translate-y-0.5"
         >
-          + Agregar Tarea
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          Nueva Tarea
         </button>
       </div>
 

@@ -64,62 +64,35 @@ export default function CommentItem({ comment, currentUserId, onUpdate, onDelete
   };
 
   return (
-    <div style={{
-      padding: '1rem',
-      border: '1px solid #e0e0e0',
-      borderRadius: '8px',
-      backgroundColor: '#f9f9f9',
-      marginBottom: '0.75rem'
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '0.5rem'
-      }}>
-        <div>
-          <strong style={{ color: '#333' }}>
+    <div className="p-4 border border-gray-100 rounded-xl bg-white shadow-sm mb-3 transition-shadow hover:shadow-md">
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+          <strong className="text-gray-900 font-medium">
             {comment.author_email || 'Usuario desconocido'}
           </strong>
-          <span style={{ color: '#666', fontSize: '0.85rem', marginLeft: '0.5rem' }}>
+          <span className="text-gray-400 text-xs">
             {formatDate(comment.created_at)}
           </span>
           {comment.updated_at && comment.updated_at !== comment.created_at && (
-            <span style={{ color: '#999', fontSize: '0.75rem', marginLeft: '0.5rem', fontStyle: 'italic' }}>
+            <span className="text-gray-400 text-[0.65rem] italic ml-1">
               (editado)
             </span>
           )}
         </div>
         
         {isAuthor && !isEditing && (
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="flex gap-2">
             <button
               onClick={() => setIsEditing(true)}
               disabled={isLoading}
-              style={{
-                padding: '0.25rem 0.75rem',
-                fontSize: '0.85rem',
-                border: '1px solid #007bff',
-                borderRadius: '4px',
-                background: 'white',
-                color: '#007bff',
-                cursor: 'pointer'
-              }}
+              className="text-xs px-2 py-1 text-primary-600 bg-primary-50 hover:bg-primary-100 rounded transition-colors"
             >
               Editar
             </button>
             <button
               onClick={handleDelete}
               disabled={isLoading}
-              style={{
-                padding: '0.25rem 0.75rem',
-                fontSize: '0.85rem',
-                border: '1px solid #dc3545',
-                borderRadius: '4px',
-                background: 'white',
-                color: '#dc3545',
-                cursor: 'pointer'
-              }}
+              className="text-xs px-2 py-1 text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors"
             >
               Eliminar
             </button>
@@ -128,62 +101,32 @@ export default function CommentItem({ comment, currentUserId, onUpdate, onDelete
       </div>
 
       {isEditing ? (
-        <div>
+        <div className="mt-2 animate-fade-in">
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             disabled={isLoading}
-            style={{
-              width: '100%',
-              minHeight: '80px',
-              padding: '0.5rem',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              fontSize: '0.95rem',
-              fontFamily: 'inherit',
-              resize: 'vertical'
-            }}
+            className="w-full min-h-[80px] p-3 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all resize-y outline-none"
           />
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-            <button
-              onClick={handleSave}
-              disabled={isLoading}
-              style={{
-                padding: '0.5rem 1rem',
-                border: 'none',
-                borderRadius: '4px',
-                background: '#28a745',
-                color: 'white',
-                cursor: 'pointer',
-                fontSize: '0.9rem'
-              }}
-            >
-              {isLoading ? 'Guardando...' : 'Guardar'}
-            </button>
+          <div className="flex justify-end gap-2 mt-2">
             <button
               onClick={handleCancel}
               disabled={isLoading}
-              style={{
-                padding: '0.5rem 1rem',
-                border: '1px solid #6c757d',
-                borderRadius: '4px',
-                background: 'white',
-                color: '#6c757d',
-                cursor: 'pointer',
-                fontSize: '0.9rem'
-              }}
+              className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
             >
               Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isLoading}
+              className="px-3 py-1.5 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors cursor-pointer shadow-sm"
+            >
+              {isLoading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </div>
       ) : (
-        <p style={{ 
-          margin: 0, 
-          color: '#333',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word'
-        }}>
+        <p className="m-0 text-gray-700 text-sm whitespace-pre-wrap break-words leading-relaxed pl-1 border-l-2 border-transparent">
           {comment.content}
         </p>
       )}

@@ -12,16 +12,12 @@ interface NotificationItemProps {
 }
 
 export default function NotificationItem({ notification, onMarkAsRead, onDelete, onClick }: NotificationItemProps) {
-  const getNotificationColor = (type: NotificationType): string => {
+  const getNotificationColorClass = (type: NotificationType): string => {
     switch (type) {
-      case 'overdue':
-        return '#dc3545';
-      case 'due_today':
-        return '#ffc107';
-      case 'due_soon':
-        return '#17a2b8';
-      default:
-        return '#6c757d';
+      case 'overdue': return 'border-red-500';
+      case 'due_today': return 'border-yellow-400';
+      case 'due_soon': return 'border-cyan-500';
+      default: return 'border-gray-400';
     }
   };
 
@@ -70,63 +66,34 @@ export default function NotificationItem({ notification, onMarkAsRead, onDelete,
   return (
     <div
       onClick={handleClick}
-      style={{
-        padding: '0.75rem',
-        borderLeft: `4px solid ${getNotificationColor(notification.notification_type)}`,
-        backgroundColor: notification.is_read ? '#f9f9f9' : '#fff',
-        marginBottom: '0.5rem',
-        borderRadius: '4px',
-        cursor: onClick ? 'pointer' : 'default',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        boxShadow: notification.is_read ? 'none' : '0 1px 3px rgba(0,0,0,0.1)',
-        transition: 'all 0.2s ease'
-      }}
-      onMouseEnter={(e) => {
-        if (onClick) {
-          e.currentTarget.style.backgroundColor = '#f0f0f0';
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = notification.is_read ? '#f9f9f9' : '#fff';
-      }}
+      className={`p-4 mb-3 rounded-lg border-l-4 ${getNotificationColorClass(notification.notification_type)} flex justify-between items-start transition-all duration-200 ease-in-out ${
+        onClick ? 'cursor-pointer' : 'cursor-default'
+      } ${
+        notification.is_read 
+          ? 'bg-gray-50 border-gray-200 opacity-75' 
+          : 'bg-white shadow-sm hover:shadow-md hover:bg-gray-50'
+      }`}
     >
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-          <span style={{ fontSize: '1.2rem' }}>
+      <div className="flex-1 min-w-0 pr-3">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xl" role="img" aria-label="icono de notificación">
             {getNotificationIcon(notification.notification_type)}
           </span>
           {!notification.is_read && (
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: '#007bff',
-              display: 'inline-block'
-            }} />
+            <span className="w-2 h-2 rounded-full bg-primary-500 inline-block shadow-sm"></span>
           )}
-          <span style={{ fontSize: '0.85rem', color: '#666' }}>
+          <span className="text-xs text-gray-500 font-medium">
             {formatDate(notification.created_at)}
           </span>
         </div>
         
-        <p style={{ 
-          margin: '0.5rem 0 0.25rem 0', 
-          color: '#333',
-          fontWeight: notification.is_read ? 'normal' : 'bold'
-        }}>
+        <p className={`mt-1.5 mb-1 text-sm ${notification.is_read ? 'text-gray-600 font-normal' : 'text-gray-900 font-bold tracking-tight'}`}>
           {notification.message}
         </p>
         
         {notification.task_title && (
-          <p style={{ 
-            margin: 0, 
-            fontSize: '0.85rem',
-            color: '#666',
-            fontStyle: 'italic'
-          }}>
-            Tarea: {notification.task_title}
+          <p className="m-0 text-xs text-gray-500 italic truncate" title={notification.task_title}>
+            Tarea: <span className="font-medium">{notification.task_title}</span>
           </p>
         )}
       </div>
@@ -136,18 +103,10 @@ export default function NotificationItem({ notification, onMarkAsRead, onDelete,
           e.stopPropagation();
           onDelete(notification.id);
         }}
-        style={{
-          padding: '0.25rem 0.5rem',
-          border: 'none',
-          background: 'transparent',
-          color: '#999',
-          cursor: 'pointer',
-          fontSize: '1.2rem',
-          marginLeft: '0.5rem'
-        }}
+        className="p-1 -mr-2 bg-transparent border-none text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg cursor-pointer text-xl flex-shrink-0 transition-colors"
         title="Eliminar notificación"
       >
-        ×
+        &times;
       </button>
     </div>
   );

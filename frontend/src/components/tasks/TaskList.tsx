@@ -10,7 +10,7 @@ interface TaskListProps {
 
 export default function TaskList({ tasks, onOpenDetail, onToggleStatus, onDelete }: TaskListProps) {
   return (
-    <ul className="task-list">
+    <ul className="space-y-4">
       {tasks.map(task => (
         <TaskItem 
           key={task.id}

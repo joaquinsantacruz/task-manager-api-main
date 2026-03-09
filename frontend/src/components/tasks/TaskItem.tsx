@@ -22,9 +22,9 @@ interface TaskItemProps {
  * Maps task status to visual styling (background, text color, label)
  */
 const STATUS_COLORS = {
-  done: { bg: '#28a745', text: '#fff', label: 'COMPLETADA' },
-  in_progress: { bg: '#ffc107', text: '#000', label: 'EN PROGRESO' },
-  todo: { bg: '#6c757d', text: '#fff', label: 'POR HACER' }
+  done: { bg: 'bg-green-500', text: 'text-white', label: 'COMPLETADA' },
+  in_progress: { bg: 'bg-yellow-400', text: 'text-yellow-900', label: 'EN PROGRESO' },
+  todo: { bg: 'bg-gray-500', text: 'text-white', label: 'POR HACER' }
 };
 
 /**
@@ -68,80 +68,47 @@ export default function TaskItem({ task, onOpenDetail, onToggleStatus, onDelete 
   const statusConfig = STATUS_COLORS[task.status];
 
   return (
-    <li className="task-item">
-      <div 
-        onClick={() => onOpenDetail(task)}
-        style={{
-          flex: 1,
-          minWidth: 0,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}
-      >
-        {/* Badge de status clickeable */}
-        <span
-          onClick={(e) => onToggleStatus(task, e)}
-          style={{
-            padding: '4px 8px',
-            borderRadius: '4px',
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            backgroundColor: statusConfig.bg,
-            color: statusConfig.text,
-            minWidth: '90px',
-            textAlign: 'center',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = '0.8';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = '1';
-          }}
+    <li className="group bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center gap-4 p-4">
+        <div 
+          onClick={() => onOpenDetail(task)}
+          className="flex-1 min-w-0 cursor-pointer flex items-center gap-4"
         >
-          {statusConfig.label}
-        </span>
-
-        {/* Título y descripción */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div 
-            className={task.status === 'done' ? 'completed' : ''}
-            style={{
-              fontSize: '1.1rem',
-              textDecoration: task.status === 'done' ? 'line-through' : 'none',
-              color: task.status === 'done' ? '#888' : 'inherit',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
+          {/* Badge de status clickeable */}
+          <span
+            onClick={(e) => onToggleStatus(task, e)}
+            className={`px-3 py-1 text-xs font-bold rounded-full cursor-pointer text-center min-w-[100px] transition-opacity hover:opacity-80 ${statusConfig.bg} ${statusConfig.text}`}
           >
-            {task.title}
+            {statusConfig.label}
+          </span>
+
+          {/* Título y descripción */}
+          <div className="flex-1 min-w-0">
+            <h3 
+              className={`text-lg font-semibold truncate ${
+                task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-900'
+              }`}
+            >
+              {task.title}
+            </h3>
+            {task.description && (
+              <p className="mt-1 text-sm text-gray-500 truncate">
+                {task.description}
+              </p>
+            )}
           </div>
-          {task.description && (
-            <div style={{
-              fontSize: '0.875rem',
-              color: '#888',
-              marginTop: '4px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              width: '100%'
-            }}>
-              {task.description}
-            </div>
-          )}
         </div>
+        
+        <button 
+          onClick={() => onDelete(task.id)} 
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+          title="Eliminar tarea"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+        </button>
       </div>
-      
-      <button 
-        onClick={() => onDelete(task.id)} 
-        className="btn-delete"
-      >
-        Eliminar
-      </button>
     </li>
   );
 }

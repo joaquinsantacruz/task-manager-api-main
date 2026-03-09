@@ -87,34 +87,17 @@ export default function TaskPagination({
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginTop: '20px',
-      padding: '15px',
-      backgroundColor: '#f8f9fa',
-      borderRadius: '8px',
-      gap: '20px',
-      flexWrap: 'wrap'
-    }}>
+    <div className="flex flex-wrap justify-between items-center mt-8 p-4 bg-white border border-gray-100 rounded-xl shadow-sm gap-4">
       {/* Page size selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <label htmlFor="pageSize" style={{ fontSize: '0.9rem', color: '#495057' }}>
+      <div className="flex items-center gap-3">
+        <label htmlFor="pageSize" className="text-sm font-medium text-gray-600">
           Tareas por página:
         </label>
         <select
           id="pageSize"
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          style={{
-            padding: '5px 10px',
-            borderRadius: '4px',
-            border: '1px solid #ced4da',
-            backgroundColor: 'white',
-            cursor: 'pointer',
-            fontSize: '0.9rem'
-          }}
+          className="px-3 py-1.5 border border-gray-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-primary-500 outline-none cursor-pointer hover:border-gray-400 transition-colors"
         >
           {pageSizeOptions.map(size => (
             <option key={size} value={size}>
@@ -125,50 +108,38 @@ export default function TaskPagination({
       </div>
 
       {/* Items info */}
-      <div style={{ fontSize: '0.9rem', color: '#6c757d' }}>
+      <div className="text-sm text-gray-500 font-medium">
         Mostrando {startItem} - {endItem} de {totalItems} tareas
       </div>
 
       {/* Navigation buttons */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+      <div className="flex items-center gap-4">
         <button
           onClick={handlePrevious}
           disabled={currentPage === 1}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: currentPage === 1 ? '#e9ecef' : '#007bff',
-            color: currentPage === 1 ? '#6c757d' : 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: '500',
-            transition: 'background-color 0.2s'
-          }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            currentPage === 1
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
         >
-          ← Anterior
+          &larr; Anterior
         </button>
 
-        <span style={{ fontSize: '0.9rem', color: '#495057', minWidth: '80px', textAlign: 'center' }}>
+        <span className="text-sm font-medium text-gray-700 min-w-[5rem] text-center">
           Página {totalPages > 0 ? currentPage : 0} de {totalPages}
         </span>
 
         <button
           onClick={handleNext}
           disabled={currentPage === totalPages || totalPages === 0}
-          style={{
-            padding: '6px 12px',
-            backgroundColor: (currentPage === totalPages || totalPages === 0) ? '#e9ecef' : '#007bff',
-            color: (currentPage === totalPages || totalPages === 0) ? '#6c757d' : 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: (currentPage === totalPages || totalPages === 0) ? 'not-allowed' : 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: '500',
-            transition: 'background-color 0.2s'
-          }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            currentPage === totalPages || totalPages === 0
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
         >
-          Siguiente →
+          Siguiente &rarr;
         </button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 from typing import Optional, Any
-from datetime import datetime, timezone
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, model_validator, field_validator, Field
 from src.models.task import TaskStatus
 from src.core.constants import (

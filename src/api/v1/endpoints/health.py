@@ -11,7 +11,6 @@ from sqlalchemy import text
 from typing import Annotated
 
 from src.api.deps import get_db
-from src.core.config import settings
 
 router = APIRouter()
 

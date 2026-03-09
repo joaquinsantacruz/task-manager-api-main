@@ -1,14 +1,13 @@
 from typing import List
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from src.models.notification import Notification, NotificationType
 from src.models.task import Task, TaskStatus
 from src.models.user import User
-from src.repositories.notification import NotificationRepository
+from src.core.unit_of_work import UnitOfWork
 from src.core.permissions import require_notification_access
 from src.core.constants import DEFAULT_PAGE_SIZE
 from src.core.errors import ERROR_NOTIFICATION_NOT_FOUND
@@ -18,10 +17,11 @@ logger = get_logger(__name__)
 
 
 class NotificationService:
-    
-    @staticmethod
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
+        
     async def get_user_notifications(
-        db: AsyncSession,
+        self,
         current_user: User,
         unread_only: bool = False,
         skip: int = 0,
@@ -52,8 +52,7 @@ class NotificationService:
             - Each notification includes type, message, timestamp, and read status
         """
         logger.debug(f"User {current_user.id} fetching notifications (unread_only={unread_only}, skip={skip}, limit={limit})")
-        notifications = await NotificationRepository.get_user_notifications(
-            db=db,
+        notifications = await self.uow.notifications.get_user_notifications(
             user_id=current_user.id,
             unread_only=unread_only,
             skip=skip,
@@ -62,9 +61,8 @@ class NotificationService:
         logger.debug(f"Retrieved {len(notifications)} notifications for user {current_user.id}")
         return notifications
     
-    @staticmethod
     async def count_unread_notifications(
-        db: AsyncSession,
+        self,
         current_user: User
     ) -> int:
         """
@@ -85,11 +83,10 @@ class NotificationService:
             - Users can only count their own notifications
             - This is a lightweight query optimized for frequent polling
         """
-        return await NotificationRepository.count_unread(db, current_user.id)
+        return await self.uow.notifications.count_unread(user_id=current_user.id)
     
-    @staticmethod
     async def mark_notification_as_read(
-        db: AsyncSession,
+        self,
         notification_id: int,
         current_user: User
     ) -> Notification:
@@ -117,7 +114,7 @@ class NotificationService:
             - Uses centralized permission validation (require_notification_access)
         """
         logger.info(f"User {current_user.id} marking notification {notification_id} as read")
-        notification = await NotificationRepository.get_by_id(db, notification_id)
+        notification = await self.uow.notifications.get_by_id(notification_id)
         
         if not notification:
             logger.warning(f"Notification {notification_id} not found for user {current_user.id}")
@@ -130,16 +127,17 @@ class NotificationService:
         require_notification_access(current_user, notification)
         
         try:
-            updated_notification = await NotificationRepository.mark_as_read(db, notification)
+            updated_notification = await self.uow.notifications.mark_as_read(notification)
+            await self.uow.commit()
             logger.info(f"Notification {notification_id} marked as read by user {current_user.id}")
             return updated_notification
         except Exception as e:
             logger.error(f"Error marking notification {notification_id} as read: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise
     
-    @staticmethod
     async def delete_notification(
-        db: AsyncSession,
+        self,
         notification_id: int,
         current_user: User
     ) -> None:
@@ -170,7 +168,7 @@ class NotificationService:
             - This is a hard delete operation (not soft delete)
             - Consider marking as read instead if notification history is needed
         """
-        notification = await NotificationRepository.get_by_id(db, notification_id)
+        notification = await self.uow.notifications.get_by_id(notification_id)
         
         if not notification:
             logger.warning(f"Notification {notification_id} not found for deletion")
@@ -184,14 +182,15 @@ class NotificationService:
         
         try:
             logger.info(f"User {current_user.id} deleting notification {notification_id}")
-            await NotificationRepository.delete(db, notification)
+            await self.uow.notifications.delete(notification)
+            await self.uow.commit()
             logger.info(f"Notification {notification_id} deleted successfully")
         except Exception as e:
             logger.error(f"Error deleting notification {notification_id}: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise
     
-    @staticmethod
-    async def generate_due_date_notifications(db: AsyncSession) -> dict:
+    async def generate_due_date_notifications(self) -> dict:
         """
         Generate automated notifications for tasks based on their due dates.
         
@@ -240,7 +239,7 @@ class NotificationService:
         }
         
         # Get all tasks with due_date that are not completed
-        result = await db.scalars(
+        result = await self.uow.session.scalars(
             select(Task)
             .options(joinedload(Task.owner))
             .where(Task.due_date.isnot(None))
@@ -257,12 +256,11 @@ class NotificationService:
             # Overdue task
             if task_due_date < now:
                 # Check if an overdue notification already exists
-                exists = await NotificationRepository.exists_for_task_and_type(
-                    db, task.id, NotificationType.OVERDUE
+                exists = await self.uow.notifications.exists_for_task_and_type(
+                    task.id, NotificationType.OVERDUE
                 )
                 if not exists:
-                    await NotificationRepository.create(
-                        db=db,
+                    await self.uow.notifications.create(
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.OVERDUE,
@@ -272,12 +270,11 @@ class NotificationService:
             
             # Task due today
             elif now <= task_due_date <= today_end:
-                exists = await NotificationRepository.exists_for_task_and_type(
-                    db, task.id, NotificationType.DUE_TODAY
+                exists = await self.uow.notifications.exists_for_task_and_type(
+                    task.id, NotificationType.DUE_TODAY
                 )
                 if not exists:
-                    await NotificationRepository.create(
-                        db=db,
+                    await self.uow.notifications.create(
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.DUE_TODAY,
@@ -287,17 +284,19 @@ class NotificationService:
             
             # Task due in the next 24 hours
             elif today_end < task_due_date <= tomorrow_end:
-                exists = await NotificationRepository.exists_for_task_and_type(
-                    db, task.id, NotificationType.DUE_SOON
+                exists = await self.uow.notifications.exists_for_task_and_type(
+                    task.id, NotificationType.DUE_SOON
                 )
                 if not exists:
-                    await NotificationRepository.create(
-                        db=db,
+                    await self.uow.notifications.create(
                         user_id=task.owner_id,
                         task_id=task.id,
                         notification_type=NotificationType.DUE_SOON,
                         message=f"Task '{task.title}' is due soon"
                     )
                     notifications_created["due_soon"] += 1
-        
+
+        if any(notifications_created.values()):
+            await self.uow.commit()
+
         return notifications_created

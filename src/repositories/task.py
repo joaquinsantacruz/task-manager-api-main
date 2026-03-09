@@ -8,11 +8,10 @@ from src.schemas.task import TaskCreate, TaskUpdate
 from src.core.constants import DEFAULT_PAGE_SIZE
 
 class TaskRepository:
-    
-    @staticmethod
-    async def get_by_id(
-        db: AsyncSession, id: int
-    ) -> Optional[Task]:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        
+    async def get_by_id(self, id: int) -> Optional[Task]:
         """
         Retrieve a task by its unique identifier with owner relationship loaded.
         
@@ -34,12 +33,11 @@ class TaskRepository:
             - Does not verify task ownership (suitable for OWNER role operations)
         """
         query = select(Task).options(joinedload(Task.owner)).where(Task.id == id)
-        result = await db.scalars(query)
+        result = await self.session.scalars(query)
         return result.one_or_none()
 
-    @staticmethod
     async def create(
-        db: AsyncSession, obj_in: TaskCreate, owner_id: int
+        self, obj_in: TaskCreate, owner_id: int
     ) -> Task:
         """
         Create a new task in the database and assign it to a specific owner.
@@ -71,21 +69,19 @@ class TaskRepository:
             **task_data,
             owner_id=owner_id
         )
-        db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
+        self.session.add(db_obj)
+        await self.session.flush()
         
         # Load the owner relationship explicitly
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(Task)
             .options(joinedload(Task.owner))
             .where(Task.id == db_obj.id)
         )
         return result.one()
 
-    @staticmethod
     async def get_all(
-        db: AsyncSession, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE
+        self, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Task]:
         """
         Retrieve all tasks in the system with pagination support.
@@ -110,12 +106,11 @@ class TaskRepository:
             - Use get_multi_by_owner for user-specific task lists
         """
         query = select(Task).options(joinedload(Task.owner)).offset(skip).limit(limit)
-        result = await db.scalars(query)
+        result = await self.session.scalars(query)
         return list(result.all())
 
-    @staticmethod
     async def get_multi_by_owner(
-        db: AsyncSession, owner_id: int, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE
+        self, owner_id: int, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE
     ) -> List[Task]:
         """
         Retrieve all tasks owned by a specific user with pagination.
@@ -141,12 +136,11 @@ class TaskRepository:
             - Suitable for "My Tasks" views
         """
         query = select(Task).options(joinedload(Task.owner)).where(Task.owner_id == owner_id).offset(skip).limit(limit)
-        result = await db.scalars(query)
+        result = await self.session.scalars(query)
         return list(result.all())
 
-    @staticmethod
     async def get_by_id_and_owner(
-        db: AsyncSession, id: int, owner_id: int
+        self, id: int, owner_id: int
     ) -> Optional[Task]:
         """
         Retrieve a task by ID only if it belongs to the specified owner.
@@ -170,12 +164,11 @@ class TaskRepository:
             - Owner relationship is eagerly loaded
         """
         query = select(Task).options(joinedload(Task.owner)).where(Task.id == id, Task.owner_id == owner_id)
-        result = await db.scalars(query)
+        result = await self.session.scalars(query)
         return result.one_or_none()
 
-    @staticmethod
     async def update(
-        db: AsyncSession, db_obj: Task, obj_in: TaskUpdate
+        self, db_obj: Task, obj_in: TaskUpdate
     ) -> Task:
         """
         Update a task with partial data from TaskUpdate schema.
@@ -206,20 +199,18 @@ class TaskRepository:
         for field, value in update_data.items():
             setattr(db_obj, field, value)
         
-        db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
+        self.session.add(db_obj)
+        await self.session.flush()
         
         # Load the owner relationship explicitly
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(Task)
             .options(joinedload(Task.owner))
             .where(Task.id == db_obj.id)
         )
         return result.one()
 
-    @staticmethod
-    async def delete(db: AsyncSession, db_obj: Task) -> None:
+    async def delete(self, db_obj: Task) -> None:
         """
         Permanently delete a task from the database.
         
@@ -240,11 +231,10 @@ class TaskRepository:
             - Does not validate ownership (must be checked before calling)
             - Cannot be undone after commit
         """
-        await db.delete(db_obj)
-        await db.commit()
+        await self.session.delete(db_obj)
+        await self.session.flush()
 
-    @staticmethod
-    async def change_owner(db: AsyncSession, task: Task, new_owner_id: int) -> Task:
+    async def change_owner(self, task: Task, new_owner_id: int) -> Task:
         """
         Transfer ownership of a task to a different user.
         
@@ -270,11 +260,10 @@ class TaskRepository:
             - Only OWNER role should be able to call this (enforced in service layer)
         """
         task.owner_id = new_owner_id
-        db.add(task)
-        await db.commit()
-        await db.refresh(task)
+        self.session.add(task)
+        await self.session.flush()
         
         # Load the owner relationship
-        await db.refresh(task, ["owner"])
+        await self.session.refresh(task, ["owner"])
         
         return task

@@ -8,9 +8,10 @@ from src.core.constants import DEFAULT_PAGE_SIZE
 
 
 class NotificationRepository:
-    
-    @staticmethod
-    async def get_by_id(db: AsyncSession, notification_id: int) -> Optional[Notification]:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        
+    async def get_by_id(self, notification_id: int) -> Optional[Notification]:
         """
         Retrieve a notification by its unique identifier with task relationship loaded.
         
@@ -31,16 +32,15 @@ class NotificationRepository:
             - Returns None rather than raising exception if not found
             - Does not verify notification ownership
         """
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(Notification)
             .options(joinedload(Notification.task))
             .where(Notification.id == notification_id)
         )
         return result.one_or_none()
     
-    @staticmethod
     async def get_user_notifications(
-        db: AsyncSession, 
+        self, 
         user_id: int, 
         unread_only: bool = False,
         skip: int = 0, 
@@ -78,15 +78,14 @@ class NotificationRepository:
         )
         
         if unread_only:
-            query = query.where(Notification.is_read == False)
+            query = query.where(Notification.is_read.is_(False))
         
         query = query.order_by(Notification.created_at.desc()).offset(skip).limit(limit)
         
-        result = await db.scalars(query)
+        result = await self.session.scalars(query)
         return list(result.all())
     
-    @staticmethod
-    async def count_unread(db: AsyncSession, user_id: int) -> int:
+    async def count_unread(self, user_id: int) -> int:
         """
         Count the total number of unread notifications for a specific user.
         
@@ -108,16 +107,15 @@ class NotificationRepository:
             - Efficient for frequent polling (notification badges)
             - Does not include notification details (just the count)
         """
-        result = await db.execute(
+        result = await self.session.execute(
             select(func.count(Notification.id))
             .where(Notification.user_id == user_id)
-            .where(Notification.is_read == False)
+            .where(Notification.is_read.is_(False))
         )
         return result.scalar_one()
     
-    @staticmethod
     async def create(
-        db: AsyncSession,
+        self,
         user_id: int,
         task_id: int,
         notification_type: str,
@@ -156,20 +154,19 @@ class NotificationRepository:
             message=message,
             is_read=False
         )
-        db.add(db_notification)
-        await db.commit()
-        await db.refresh(db_notification)
+        self.session.add(db_notification)
+        await self.session.flush()
+        await self.session.refresh(db_notification)
         
         # Load the task relationship
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(Notification)
             .options(joinedload(Notification.task))
             .where(Notification.id == db_notification.id)
         )
         return result.one()
     
-    @staticmethod
-    async def mark_as_read(db: AsyncSession, notification: Notification) -> Notification:
+    async def mark_as_read(self, notification: Notification) -> Notification:
         """
         Mark a notification as read by setting is_read to True.
         
@@ -190,12 +187,10 @@ class NotificationRepository:
             - Does not validate notification ownership (must be checked before calling)
         """
         notification.is_read = True
-        await db.commit()
-        await db.refresh(notification)
+        await self.session.flush()
         return notification
     
-    @staticmethod
-    async def delete(db: AsyncSession, notification: Notification) -> None:
+    async def delete(self, notification: Notification) -> None:
         """
         Permanently delete a notification from the database.
         
@@ -215,12 +210,11 @@ class NotificationRepository:
             - Cannot be undone after commit
             - Does not validate notification ownership (must be checked before calling)
         """
-        await db.delete(notification)
-        await db.commit()
+        await self.session.delete(notification)
+        await self.session.flush()
     
-    @staticmethod
     async def exists_for_task_and_type(
-        db: AsyncSession,
+        self,
         task_id: int,
         notification_type: str
     ) -> bool:
@@ -246,11 +240,11 @@ class NotificationRepository:
             - Returns False if count is 0, True if count > 0
             - Read notifications are ignored (allows creating new notifications if user already read previous ones)
         """
-        result = await db.execute(
+        result = await self.session.execute(
             select(func.count(Notification.id))
             .where(Notification.task_id == task_id)
             .where(Notification.notification_type == notification_type)
-            .where(Notification.is_read == False)
+            .where(Notification.is_read.is_(False))
         )
         count = result.scalar_one()
         return count > 0

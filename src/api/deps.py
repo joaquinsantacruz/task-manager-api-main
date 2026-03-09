@@ -5,11 +5,14 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import ValidationError
 
-from src.core import security
 from src.core.config import settings
 from src.db.session import get_db
 from src.models.user import User, UserRole
-from src.repositories.user import UserRepository
+from src.core.unit_of_work import UnitOfWork
+from src.services.user import UserService
+from src.services.task import TaskService
+from src.services.comment import CommentService
+from src.services.notification import NotificationService
 from src.schemas.token import TokenPayload
 from src.core.errors import ERROR_INVALID_CREDENTIALS, ERROR_INSUFFICIENT_PERMISSIONS
 
@@ -17,9 +20,24 @@ reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
 )
 
+async def get_uow(db: Annotated[AsyncSession, Depends(get_db)]) -> UnitOfWork:
+    return UnitOfWork(db)
+
+async def get_user_service(uow: Annotated[UnitOfWork, Depends(get_uow)]) -> UserService:
+    return UserService(uow)
+
+async def get_task_service(uow: Annotated[UnitOfWork, Depends(get_uow)]) -> TaskService:
+    return TaskService(uow)
+
+async def get_comment_service(uow: Annotated[UnitOfWork, Depends(get_uow)]) -> CommentService:
+    return CommentService(uow)
+
+async def get_notification_service(uow: Annotated[UnitOfWork, Depends(get_uow)]) -> NotificationService:
+    return NotificationService(uow)
+
 async def get_current_user(
     token: Annotated[str, Depends(reusable_oauth2)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    user_service: Annotated[UserService, Depends(get_user_service)],
 ) -> User:
     try:
         payload = jwt.decode(
@@ -32,7 +50,7 @@ async def get_current_user(
             detail=ERROR_INVALID_CREDENTIALS,
         )
     
-    user = await UserRepository.get_by_email(db, email=token_data.sub)
+    user = await user_service.uow.users.get_by_email(email=token_data.sub)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

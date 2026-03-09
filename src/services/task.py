@@ -1,7 +1,6 @@
-﻿from typing import List
+from typing import List
 
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.constants import DEFAULT_PAGE_SIZE
 from src.core.errors import (
@@ -14,18 +13,18 @@ from src.core.permissions import require_owner_role, require_task_modification
 from src.core.logger import get_logger
 from src.models.task import Task
 from src.models.user import User, UserRole
-from src.repositories.task import TaskRepository
-from src.repositories.user import UserRepository
+from src.core.unit_of_work import UnitOfWork
 from src.schemas.task import TaskCreate, TaskUpdate
 
 logger = get_logger(__name__)
 
 
 class TaskService:
-    
-    @staticmethod
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
+        
     async def create_task(
-        db: AsyncSession,
+        self,
         task_data: TaskCreate,
         current_user: User
     ) -> Task:
@@ -72,16 +71,17 @@ class TaskService:
         
         try:
             logger.info(f"User {current_user.id} ({current_user.email}) creating task: {task_data.title}")
-            task = await TaskRepository.create(db, task_data, current_user.id)
+            task = await self.uow.tasks.create(task_data, current_user.id)
+            await self.uow.commit()
             logger.info(f"Task {task.id} created successfully by user {current_user.id}")
             return task
         except Exception as e:
             logger.error(f"Error creating task for user {current_user.id}: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise
     
-    @staticmethod
     async def get_tasks_for_user(
-        db: AsyncSession, 
+        self, 
         user: User, 
         skip: int = 0, 
         limit: int = DEFAULT_PAGE_SIZE,
@@ -104,15 +104,14 @@ class TaskService:
             List of Task objects
         """
         if only_mine or user.role != UserRole.OWNER:
-            return await TaskRepository.get_multi_by_owner(
-                db=db, owner_id=user.id, skip=skip, limit=limit
+            return await self.uow.tasks.get_multi_by_owner(
+                owner_id=user.id, skip=skip, limit=limit
             )
         
-        return await TaskRepository.get_all(db=db, skip=skip, limit=limit)
+        return await self.uow.tasks.get_all(skip=skip, limit=limit)
     
-    @staticmethod
     async def get_task_by_id_for_user(
-        db: AsyncSession,
+        self,
         task_id: int,
         user: User
     ) -> Task:
@@ -132,8 +131,8 @@ class TaskService:
             HTTPException: 404 if task not found or not owned by user
         """
         logger.debug(f"User {user.id} fetching task {task_id}")
-        task = await TaskRepository.get_by_id_and_owner(
-            db=db, id=task_id, owner_id=user.id
+        task = await self.uow.tasks.get_by_id_and_owner(
+            id=task_id, owner_id=user.id
         )
         if not task:
             logger.warning(f"Task {task_id} not found for user {user.id}")
@@ -142,9 +141,8 @@ class TaskService:
         return task
     
 
-    @staticmethod
     async def get_task_for_action(
-        db: AsyncSession, 
+        self, 
         task_id: int, 
         user: User
     ) -> Task:
@@ -180,7 +178,7 @@ class TaskService:
             - This method is used by update_task and delete_task
             - For read-only access, use get_task_by_id_for_user instead
         """
-        task = await TaskRepository.get_by_id(db, id=task_id)
+        task = await self.uow.tasks.get_by_id(id=task_id)
         
         if not task:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=ERROR_TASK_NOT_FOUND)
@@ -189,9 +187,8 @@ class TaskService:
             
         return task
     
-    @staticmethod
     async def change_task_owner(
-        db: AsyncSession,
+        self,
         task_id: int,
         new_owner_id: int,
         current_user: User
@@ -212,7 +209,7 @@ class TaskService:
         require_owner_role(current_user)
         
         # Verify that the task exists
-        task = await TaskRepository.get_by_id(db, id=task_id)
+        task = await self.uow.tasks.get_by_id(id=task_id)
         if not task:
             logger.warning(f"Task {task_id} not found for ownership change")
             raise HTTPException(
@@ -221,7 +218,7 @@ class TaskService:
             )
         
         # Verify that the new owner exists
-        new_owner = await UserRepository.get_by_id(db, id=new_owner_id)
+        new_owner = await self.uow.users.get_by_id(id=new_owner_id)
         if not new_owner:
             logger.warning(f"New owner {new_owner_id} not found for task {task_id}")
             raise HTTPException(
@@ -238,13 +235,17 @@ class TaskService:
             )
         
         # Update the task owner using repository
-        updated_task = await TaskRepository.change_owner(db, task, new_owner_id)
-        logger.info(f"Task {task_id} owner changed from {task.owner_id} to {new_owner_id} by user {current_user.id}")
-        return updated_task
+        try:
+            updated_task = await self.uow.tasks.change_owner(task, new_owner_id)
+            await self.uow.commit()
+            logger.info(f"Task {task_id} owner changed from {task.owner_id} to {new_owner_id} by user {current_user.id}")
+            return updated_task
+        except Exception:
+            await self.uow.rollback()
+            raise
     
-    @staticmethod
     async def update_task(
-        db: AsyncSession,
+        self,
         task_id: int,
         task_in: TaskUpdate,
         current_user: User
@@ -268,19 +269,20 @@ class TaskService:
             Updated Task object
         """
         logger.info(f"User {current_user.id} updating task {task_id}")
-        task = await TaskService.get_task_for_action(db, task_id, current_user)
+        task = await self.get_task_for_action(task_id, current_user)
         
         try:
-            updated_task = await TaskRepository.update(db=db, db_obj=task, obj_in=task_in)
+            updated_task = await self.uow.tasks.update(db_obj=task, obj_in=task_in)
+            await self.uow.commit()
             logger.info(f"Task {task_id} updated successfully by user {current_user.id}")
             return updated_task
         except Exception as e:
             logger.error(f"Error updating task {task_id}: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise
 
-    @staticmethod
     async def delete_task(
-        db: AsyncSession,
+        self,
         task_id: int,
         current_user: User
     ) -> None:
@@ -299,12 +301,14 @@ class TaskService:
             current_user: Current authenticated user
         """
         logger.info(f"User {current_user.id} deleting task {task_id}")
-        task = await TaskService.get_task_for_action(db, task_id, current_user)
+        task = await self.get_task_for_action(task_id, current_user)
         
         try:
-            await TaskRepository.delete(db=db, db_obj=task)
+            await self.uow.tasks.delete(db_obj=task)
+            await self.uow.commit()
             logger.info(f"Task {task_id} deleted successfully by user {current_user.id}")
         except Exception as e:
             logger.error(f"Error deleting task {task_id}: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise
 

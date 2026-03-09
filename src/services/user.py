@@ -1,23 +1,23 @@
 from typing import List
 
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.errors import ERROR_INVALID_USER_DATA
 from src.core.permissions import require_owner_role
 from src.core.logger import get_logger
 from src.models.user import User
-from src.repositories.user import UserRepository
+from src.core.unit_of_work import UnitOfWork
 from src.schemas.user import UserCreate, UserCreateByOwner
 
 logger = get_logger(__name__)
 
 
 class UserService:
-    
-    @staticmethod
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
+        
     async def create_user_by_owner(
-        db: AsyncSession,
+        self,
         user_data: UserCreateByOwner
     ) -> User:
         """
@@ -52,7 +52,7 @@ class UserService:
             - Created users can immediately log in with provided credentials
         """
         # Check if email already exists
-        existing_user = await UserRepository.get_by_email(db, email=user_data.email)
+        existing_user = await self.uow.users.get_by_email(email=user_data.email)
         if existing_user:
             logger.warning(f"Attempt to create user with existing email: {user_data.email}")
             raise HTTPException(
@@ -70,16 +70,17 @@ class UserService:
         
         logger.info(f"Creating new user with email: {user_data.email}, role: {user_data.role}")
         try:
-            new_user = await UserRepository.create(db, user_create)
+            new_user = await self.uow.users.create(user_create)
+            await self.uow.commit()
             logger.info(f"User {new_user.id} created successfully: {new_user.email}")
             return new_user
         except Exception as e:
             logger.error(f"Error creating user {user_data.email}: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise    
     
-    @staticmethod
     async def get_users(
-        db: AsyncSession,
+        self,
         current_user: User,
         skip: int = 0,
         limit: int = 100
@@ -104,7 +105,7 @@ class UserService:
             require_owner_role(current_user)
             # If OWNER, return all users
             logger.debug(f"User {current_user.id} (OWNER) fetching all users (skip={skip}, limit={limit})")
-            users = await UserRepository.get_all(db=db, skip=skip, limit=limit)
+            users = await self.uow.users.get_all(skip=skip, limit=limit)
             logger.debug(f"Retrieved {len(users)} users for user {current_user.id}")
             return users
         except HTTPException:

@@ -1,12 +1,10 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api import deps
 from src.core.constants import DEFAULT_PAGE_SIZE
 from src.core.permissions import require_owner_role
-from src.db.session import get_db
 from src.models.notification import Notification
 from src.models.user import User
 from src.schemas.notification import (
@@ -21,7 +19,7 @@ router = APIRouter()
 
 @router.get("/", response_model=List[NotificationResponse])
 async def get_notifications(
-    db: Annotated[AsyncSession, Depends(get_db)],
+    notification_service: Annotated[NotificationService, Depends(deps.get_notification_service)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
     unread_only: bool = False,
     skip: int = 0,
@@ -35,8 +33,7 @@ async def get_notifications(
     - skip: Number of records to skip (pagination)
     - limit: Maximum number of records to return
     """
-    return await NotificationService.get_user_notifications(
-        db=db,
+    return await notification_service.get_user_notifications(
         current_user=current_user,
         unread_only=unread_only,
         skip=skip,
@@ -46,14 +43,13 @@ async def get_notifications(
 
 @router.get("/unread-count", response_model=UnreadCountResponse)
 async def get_unread_count(
-    db: Annotated[AsyncSession, Depends(get_db)],
+    notification_service: Annotated[NotificationService, Depends(deps.get_notification_service)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> UnreadCountResponse:
     """
     Get the count of unread notifications for the current user.
     """
-    count = await NotificationService.count_unread_notifications(
-        db=db,
+    count = await notification_service.count_unread_notifications(
         current_user=current_user
     )
     return UnreadCountResponse(unread_count=count)
@@ -62,14 +58,13 @@ async def get_unread_count(
 @router.put("/{notification_id}/read", response_model=NotificationResponse)
 async def mark_notification_as_read(
     notification_id: int,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    notification_service: Annotated[NotificationService, Depends(deps.get_notification_service)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> Notification:
     """
     Mark a notification as read.
     """
-    return await NotificationService.mark_notification_as_read(
-        db=db,
+    return await notification_service.mark_notification_as_read(
         notification_id=notification_id,
         current_user=current_user
     )
@@ -78,14 +73,13 @@ async def mark_notification_as_read(
 @router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_notification(
     notification_id: int,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    notification_service: Annotated[NotificationService, Depends(deps.get_notification_service)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> None:
     """
     Delete a notification.
     """
-    await NotificationService.delete_notification(
-        db=db,
+    await notification_service.delete_notification(
         notification_id=notification_id,
         current_user=current_user
     )
@@ -93,7 +87,7 @@ async def delete_notification(
 
 @router.post("/check-due-dates", response_model=NotificationGenerationResponse)
 async def check_due_dates(
-    db: Annotated[AsyncSession, Depends(get_db)],
+    notification_service: Annotated[NotificationService, Depends(deps.get_notification_service)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> NotificationGenerationResponse:
     """
@@ -109,7 +103,7 @@ async def check_due_dates(
     """
     require_owner_role(current_user)
     
-    notifications_created = await NotificationService.generate_due_date_notifications(db)
+    notifications_created = await notification_service.generate_due_date_notifications()
     
     return NotificationGenerationResponse(
         message="Notifications generated successfully",

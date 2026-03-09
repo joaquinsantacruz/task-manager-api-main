@@ -9,9 +9,10 @@ from src.core.constants import DEFAULT_PAGE_SIZE
 
 
 class CommentRepository:
-    
-    @staticmethod
-    async def get_by_id(db: AsyncSession, comment_id: int) -> Optional[Comment]:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        
+    async def get_by_id(self, comment_id: int) -> Optional[Comment]:
         """
         Retrieve a comment by its unique identifier with author relationship loaded.
         
@@ -32,15 +33,14 @@ class CommentRepository:
             - Returns None rather than raising exception if not found
             - Does not verify comment ownership or permissions
         """
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(Comment)
             .options(joinedload(Comment.author))
             .where(Comment.id == comment_id)
         )
         return result.one_or_none()
     
-    @staticmethod
-    async def get_by_task(db: AsyncSession, task_id: int, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE) -> List[Comment]:
+    async def get_by_task(self, task_id: int, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE) -> List[Comment]:
         """
         Retrieve all comments for a specific task with pagination.
         
@@ -64,7 +64,7 @@ class CommentRepository:
             - Does not verify if task exists (returns empty list for invalid task_id)
             - Task relationship is NOT loaded (only author)
         """
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(Comment)
             .options(joinedload(Comment.author))
             .where(Comment.task_id == task_id)
@@ -74,8 +74,7 @@ class CommentRepository:
         )
         return list(result.all())
     
-    @staticmethod
-    async def create(db: AsyncSession, task_id: int, author_id: int, comment_in: CommentCreate) -> Comment:
+    async def create(self, task_id: int, author_id: int, comment_in: CommentCreate) -> Comment:
         """
         Create a new comment on a task.
         
@@ -108,20 +107,18 @@ class CommentRepository:
             task_id=task_id,
             author_id=author_id
         )
-        db.add(db_comment)
-        await db.commit()
-        await db.refresh(db_comment)
+        self.session.add(db_comment)
+        await self.session.flush()
         
         # Load the author relationship
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(Comment)
             .options(joinedload(Comment.author))
             .where(Comment.id == db_comment.id)
         )
         return result.one()
     
-    @staticmethod
-    async def update(db: AsyncSession, comment: Comment, comment_in: CommentUpdate) -> Comment:
+    async def update(self, comment: Comment, comment_in: CommentUpdate) -> Comment:
         """
         Update the content of an existing comment.
         
@@ -148,19 +145,17 @@ class CommentRepository:
             - updated_at is automatically updated by database
         """
         comment.content = comment_in.content
-        await db.commit()
-        await db.refresh(comment)
+        await self.session.flush()
         
         # Load the author relationship
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(Comment)
             .options(joinedload(Comment.author))
             .where(Comment.id == comment.id)
         )
         return result.one()
     
-    @staticmethod
-    async def delete(db: AsyncSession, comment: Comment) -> None:
+    async def delete(self, comment: Comment) -> None:
         """
         Permanently delete a comment from the database.
         
@@ -181,5 +176,5 @@ class CommentRepository:
             - Does not validate comment ownership or permissions (must be checked before calling)
             - Does not affect the associated task
         """
-        await db.delete(comment)
-        await db.commit()
+        await self.session.delete(comment)
+        await self.session.flush()

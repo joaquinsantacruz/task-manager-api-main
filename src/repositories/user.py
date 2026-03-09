@@ -8,9 +8,10 @@ from src.core.security import get_password_hash
 from src.core.constants import DEFAULT_PAGE_SIZE
 
 class UserRepository:
-    
-    @staticmethod
-    async def get_by_id(db: AsyncSession, id: int) -> Optional[User]:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        
+    async def get_by_id(self, id: int) -> Optional[User]:
         """
         Retrieve a user by their unique identifier.
         
@@ -29,13 +30,12 @@ class UserRepository:
             - Does not load related entities (tasks, comments, notifications)
             - Returns None rather than raising exception if not found
         """
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(User).where(User.id == id)
         )
         return result.one_or_none()
     
-    @staticmethod
-    async def get_by_email(db: AsyncSession, email: str) -> Optional[User]:
+    async def get_by_email(self, email: str) -> Optional[User]:
         """
         Retrieve a user by their email address.
         
@@ -55,13 +55,12 @@ class UserRepository:
             - Used by authentication system to validate credentials
             - Used to prevent duplicate email registrations
         """
-        result = await db.scalars(
+        result = await self.session.scalars(
             select(User).where(User.email == email)
         )
         return result.one_or_none()
     
-    @staticmethod
-    async def get_all(db: AsyncSession, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE) -> List[User]:
+    async def get_all(self, skip: int = 0, limit: int = DEFAULT_PAGE_SIZE) -> List[User]:
         """
         Retrieve all active users in the system with pagination.
         
@@ -82,13 +81,12 @@ class UserRepository:
             - Does not load related entities (tasks, comments)
             - Suitable for user management interfaces
         """
-        result = await db.scalars(
-            select(User).where(User.is_active == True).offset(skip).limit(limit)
+        result = await self.session.scalars(
+            select(User).where(User.is_active.is_(True)).offset(skip).limit(limit)
         )
         return list(result.all())
 
-    @staticmethod
-    async def create(db: AsyncSession, user_in: UserCreate) -> User:
+    async def create(self, user_in: UserCreate) -> User:
         """
         Create a new user account with securely hashed password.
         
@@ -123,7 +121,7 @@ class UserRepository:
             role=user_in.role,
             is_active=user_in.is_active
         )
-        db.add(db_user)
-        await db.commit()
-        await db.refresh(db_user)
+        self.session.add(db_user)
+        await self.session.flush()
+        await self.session.refresh(db_user)
         return db_user

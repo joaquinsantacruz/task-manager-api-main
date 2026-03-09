@@ -15,7 +15,6 @@ Usage:
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from sqlalchemy import select
 
 from src.db.session import AsyncSessionLocal
 from src.models.user import User, UserRole

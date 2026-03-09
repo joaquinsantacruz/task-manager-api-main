@@ -1,7 +1,6 @@
 from typing import List
 
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.constants import DEFAULT_PAGE_SIZE
 from src.core.errors import ERROR_TASK_NOT_FOUND, ERROR_COMMENT_NOT_FOUND
@@ -9,18 +8,18 @@ from src.core.permissions import require_task_access, require_comment_modificati
 from src.core.logger import get_logger
 from src.models.comment import Comment
 from src.models.user import User
-from src.repositories.comment import CommentRepository
-from src.repositories.task import TaskRepository
+from src.core.unit_of_work import UnitOfWork
 from src.schemas.comment import CommentCreate, CommentUpdate
 
 logger = get_logger(__name__)
 
 
 class CommentService:
-    
-    @staticmethod
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
+        
     async def get_task_comments(
-        db: AsyncSession,
+        self,
         task_id: int,
         current_user: User,
         skip: int = 0,
@@ -41,7 +40,7 @@ class CommentService:
             List of Comment objects
         """
         # Verify task exists
-        task = await TaskRepository.get_by_id(db, task_id)
+        task = await self.uow.tasks.get_by_id(task_id)
         if not task:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -51,11 +50,10 @@ class CommentService:
         # Verify permissions using centralized function
         require_task_access(current_user, task)
         
-        return await CommentRepository.get_by_task(db, task_id, skip, limit)
+        return await self.uow.comments.get_by_task(task_id, skip, limit)
     
-    @staticmethod
     async def create_comment(
-        db: AsyncSession,
+        self,
         task_id: int,
         comment_in: CommentCreate,
         current_user: User
@@ -103,7 +101,7 @@ class CommentService:
             - Comments are associated with tasks, not with specific task versions
         """
         # Verify task exists
-        task = await TaskRepository.get_by_id(db, task_id)
+        task = await self.uow.tasks.get_by_id(task_id)
         if not task:
             logger.warning(f"Attempt to create comment on non-existent task {task_id}")
             raise HTTPException(
@@ -116,16 +114,17 @@ class CommentService:
         
         try:
             logger.info(f"User {current_user.id} creating comment on task {task_id}")
-            comment = await CommentRepository.create(db, task_id, current_user.id, comment_in)
+            comment = await self.uow.comments.create(task_id, current_user.id, comment_in)
+            await self.uow.commit()
             logger.info(f"Comment {comment.id} created successfully on task {task_id}")
             return comment
         except Exception as e:
             logger.error(f"Error creating comment on task {task_id}: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise
     
-    @staticmethod
     async def update_comment(
-        db: AsyncSession,
+        self,
         comment_id: int,
         comment_in: CommentUpdate,
         current_user: User
@@ -170,7 +169,7 @@ class CommentService:
             - Only content field can be modified
             - No edit history is maintained (consider adding if needed)
         """
-        comment = await CommentRepository.get_by_id(db, comment_id)
+        comment = await self.uow.comments.get_by_id(comment_id)
         if not comment:
             logger.warning(f"Comment {comment_id} not found for update")
             raise HTTPException(
@@ -183,16 +182,17 @@ class CommentService:
         
         try:
             logger.info(f"User {current_user.id} updating comment {comment_id}")
-            updated_comment = await CommentRepository.update(db, comment, comment_in)
+            updated_comment = await self.uow.comments.update(comment, comment_in)
+            await self.uow.commit()
             logger.info(f"Comment {comment_id} updated successfully")
             return updated_comment
         except Exception as e:
             logger.error(f"Error updating comment {comment_id}: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise
     
-    @staticmethod
     async def delete_comment(
-        db: AsyncSession,
+        self,
         comment_id: int,
         current_user: User
     ) -> None:
@@ -231,7 +231,7 @@ class CommentService:
             - No notification is sent to task owner or comment author
             - Consider implementing soft delete if comment history is needed
         """
-        comment = await CommentRepository.get_by_id(db, comment_id)
+        comment = await self.uow.comments.get_by_id(comment_id)
         if not comment:
             logger.warning(f"Comment {comment_id} not found for deletion")
             raise HTTPException(
@@ -244,8 +244,10 @@ class CommentService:
         
         try:
             logger.info(f"User {current_user.id} deleting comment {comment_id}")
-            await CommentRepository.delete(db, comment)
+            await self.uow.comments.delete(comment)
+            await self.uow.commit()
             logger.info(f"Comment {comment_id} deleted successfully")
         except Exception as e:
             logger.error(f"Error deleting comment {comment_id}: {str(e)}", exc_info=True)
+            await self.uow.rollback()
             raise

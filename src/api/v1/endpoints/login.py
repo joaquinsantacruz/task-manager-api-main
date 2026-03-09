@@ -3,13 +3,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core import security
 from src.core.config import settings
 from src.core.logger import get_logger
-from src.db.session import get_db
-from src.repositories.user import UserRepository
+from src.api import deps
+from src.services.user import UserService
 from src.schemas.token import Token
 from src.core.errors import ERROR_INCORRECT_EMAIL_OR_PASSWORD, ERROR_INACTIVE_USER
 
@@ -19,14 +18,14 @@ router = APIRouter()
 @router.post("/login/access-token", response_model=Token)
 async def login_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    user_service: Annotated[UserService, Depends(deps.get_user_service)],
 ) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests.
     """
     logger.info(f"Login attempt for email: {form_data.username}")
     
-    user = await UserRepository.get_by_email(db, email=form_data.username)
+    user = await user_service.uow.users.get_by_email(email=form_data.username)
 
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         logger.warning(f"Failed login attempt for email: {form_data.username}")

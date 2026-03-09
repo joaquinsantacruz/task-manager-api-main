@@ -373,10 +373,8 @@ class TestCreateUser:
         
         # Verify user exists in database
         from src.repositories.user import UserRepository
-        created_user = await UserRepository.get_by_email(
-            db=db_session,
-            email=user_data["email"]
-        )
+        user_repo = UserRepository(db_session)
+        created_user = await user_repo.get_by_email(email=user_data["email"])
         assert created_user is not None
         assert created_user.email == user_data["email"]
         # Verify password was hashed

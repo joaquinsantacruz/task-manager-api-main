@@ -1,12 +1,10 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api import deps
 from src.core.constants import DEFAULT_PAGE_SIZE
 from src.core.permissions import require_owner_role
-from src.db.session import get_db
 from src.models.user import User
 from src.schemas.user import UserResponse, UserCreateByOwner
 from src.services.user import UserService
@@ -25,7 +23,7 @@ async def read_current_user(
 
 @router.get("/", response_model=List[UserResponse])
 async def read_users(
-    db: Annotated[AsyncSession, Depends(get_db)],
+    user_service: Annotated[UserService, Depends(deps.get_user_service)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
     skip: int = 0,
     limit: int = DEFAULT_PAGE_SIZE,
@@ -33,8 +31,7 @@ async def read_users(
     """
     Get list of users (OWNER role only).
     """
-    return await UserService.get_users(
-        db=db, 
+    return await user_service.get_users(
         current_user=current_user, 
         skip=skip, 
         limit=limit
@@ -43,7 +40,7 @@ async def read_users(
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user_in: UserCreateByOwner,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    user_service: Annotated[UserService, Depends(deps.get_user_service)],
     current_user: Annotated[User, Depends(deps.get_current_user)],
 ) -> User:
     """
@@ -57,5 +54,5 @@ async def create_user(
     """
     require_owner_role(current_user)
     
-    return await UserService.create_user_by_owner(db=db, user_data=user_in)
+    return await user_service.create_user_by_owner(user_data=user_in)
 

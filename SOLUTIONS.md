@@ -1,20 +1,212 @@
-# SOLUTIONS.md - Task Manager API
+# Task Manager API - Complete Documentation
+
+> A full-stack task management application built with FastAPI and React, featuring role-based access control, real-time notifications, and comprehensive task collaboration tools.
+
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/joaquinsantacruz/task-manager-api-main/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/joaquinsantacruz/task-manager-api-main/tree/main)
+[![Coverage Status](https://coveralls.io/repos/github/joaquinsantacruz/task-manager-api-main/badge.svg?branch=main)](https://coveralls.io/github/joaquinsantacruz/task-manager-api-main?branch=main)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.6-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-18.3.1-61DAFB.svg?style=flat&logo=React&logoColor=white)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-3178C6.svg?style=flat&logo=TypeScript&logoColor=white)](https://www.typescriptlang.org/)
+
+---
 
 ## Table of Contents
 
-- [Architectural Decisions](#architectural-decisions)
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Architecture & Design Decisions](#architecture--design-decisions)
 - [Design Patterns](#design-patterns)
 - [SOLID Principles Application](#solid-principles-application)
 - [Security Decisions](#security-decisions)
 - [Database Design](#database-design)
-- [Trade-offs and Compromises](#trade-offs-and-compromises)
-- [What I Prioritized and Why](#what-i-prioritized-and-why)
-- [What I Would Improve With More Time](#what-i-would-improve-with-more-time)
-- [How to Run and Test](#how-to-run-and-test)
+- [Logging System](#logging-system)
+- [Troubleshooting](#troubleshooting)
+- [Areas for Improvement](#areas-for-improvement)
+- [Known Issues](#known-issues)
+- [Additional Resources](#additional-resources)
 
 ---
 
-## Architectural Decisions
+## Overview
+
+### What is This Project?
+
+Task Manager API is a modern, full-stack application designed for efficient task management and team collaboration. It provides:
+
+- **Robust RESTful API** built with FastAPI
+- **Responsive React frontend** with TypeScript
+- **Role-Based Access Control (RBAC)** with Owner and Member roles
+- **Real-time notifications** for due date tracking
+- **Task commenting** for team collaboration
+- **Comprehensive task lifecycle management**
+
+### User Roles
+
+| Role | Permissions |
+|------|-------------|
+| **OWNER** | Full administrative access to all tasks and users |
+| **MEMBER** | Access to personal tasks with limited permissions |
+
+### Features
+
+#### Core Functionality
+- **Task Management**: Create, read, update, and delete tasks with status tracking
+- **Role-Based Access Control (RBAC)**: Owner and Member roles with granular permissions
+- **User Authentication**: JWT-based authentication with secure token handling
+- **Task Comments**: Collaborative commenting system on tasks
+- **Smart Notifications**: Automated due date notifications (overdue, due today, due soon)
+- **Task Assignment**: Owners can reassign tasks to other users
+- **Due Date Management**: Set and track task deadlines with visual indicators
+
+#### Technical Features
+- 🔒 **Security**: Argon2 password hashing, JWT tokens, CORS protection
+- 📊 **Comprehensive Logging**: Backend and frontend logging with file rotation
+- 🧪 **Test Coverage**: 98 test cases with pytest
+- 🚀 **CI/CD Pipeline**: Automated testing and coverage reporting with CircleCI
+- 🔄 **Real-time Updates**: Automatic notification polling
+- 📄 **API Documentation**: Auto-generated Swagger/OpenAPI documentation
+- 🐳 **Docker Support**: Containerized deployment with Docker Compose
+
+### Tech Stack
+
+#### Backend
+- **Framework**: FastAPI 0.115.6
+- **Language**: Python 3.13
+- **Database**: PostgreSQL 16 with asyncpg driver
+- **ORM**: SQLAlchemy 2.0 (async)
+- **Migrations**: Alembic
+- **Authentication**: JWT with python-jose
+- **Password Hashing**: Argon2
+- **Testing**: pytest, pytest-asyncio, pytest-cov
+- **Package Manager**: uv
+
+#### Frontend
+- **Framework**: React 18.3.1
+- **Language**: TypeScript 5.6.2
+- **Build Tool**: Vite 6.0.3
+- **HTTP Client**: Axios
+- **Styling**: Tailwind CSS
+
+#### DevOps & Tools
+- **CI/CD**: CircleCI
+- **Code Coverage**: Coveralls
+- **Containerization**: Docker & Docker Compose
+- **Version Control**: Git
+- **API Testing**: Swagger UI
+
+---
+
+## Quick Start
+
+### Option 1: Docker (Recommended)
+
+```bash
+docker-compose up -d
+```
+
+Everything is handled automatically:
+- PostgreSQL database starts
+- Migrations run automatically
+- Sample data is seeded
+- Backend API starts
+- Frontend starts
+
+### Option 2: Local Development
+
+```bash
+# Full setup (backend + frontend + database)
+./setup-dev.sh
+
+# Start the app
+source .venv/bin/activate
+uvicorn src.main:app --reload
+
+# In another terminal:
+cd frontend && npm run dev
+```
+
+The script will:
+- Install `uv` (Python package manager) if needed
+- Create a Python 3.13 virtual environment
+- Install backend dependencies
+- Install frontend dependencies (npm)
+- Create the `.env` file
+- Setup the database and run migrations
+
+### Access the Application
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Frontend | http://localhost | React user interface |
+| Backend API | http://localhost:8000 | FastAPI REST API |
+| API Docs | http://localhost:8000/docs | Swagger documentation |
+| Database | localhost:5432 | PostgreSQL |
+
+### Default Credentials
+
+**Owner user:**
+- Email: `admin@admin.com`
+- Password: `admin123`
+
+**Member user:**
+- Email: `john.doe@example.com`
+- Password: `password123`
+
+### Stop the Application
+
+```bash
+docker-compose down
+```
+
+To also remove data volumes:
+
+```bash
+docker-compose down -v
+```
+
+---
+
+## Project Structure
+
+```
+task-manager-api/
+├── src/                          # Backend source code
+│   ├── api/
+│   │   └── v1/
+│   │       └── endpoints/        # API endpoints
+│   ├── core/                     # Core configurations
+│   │   ├── config.py            # Settings
+│   │   ├── security.py          # Auth utilities
+│   │   ├── logger.py            # Logging setup
+│   │   └── permissions.py       # RBAC logic
+│   ├── db/                       # Database configuration
+│   ├── models/                   # SQLAlchemy models
+│   ├── repositories/             # Data access layer
+│   ├── schemas/                  # Pydantic schemas
+│   └── services/                 # Business logic
+├── frontend/                     # Frontend source code
+│   └── src/
+│       ├── api/                  # API client
+│       ├── components/           # React components
+│       ├── context/              # React context
+│       ├── hooks/                # Custom hooks
+│       ├── pages/                # Page components
+│       ├── services/             # API services
+│       └── utils/                # Utilities
+├── tests/                        # Backend tests
+├── alembic/                      # Database migrations
+├── logs/                         # Application logs
+├── .circleci/                    # CI/CD configuration
+├── docker-compose.yml            # Docker composition
+├── pyproject.toml               # Python dependencies
+└── README.md                     # This file
+```
+
+---
+
+## Architecture & Design Decisions
 
 ### 1. Layered Architecture (Repository-Service-Controller Pattern)
 
@@ -263,7 +455,7 @@ async def read_tasks(
 
 ---
 
-### 3. Factory and Builder Pattern (Tests)
+### 3. Factory Pattern (Tests)
 
 **What:** Factory functions to create test data.
 
@@ -510,8 +702,6 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 - **Modern**: Winner of Password Hashing Competition (2015)
 - **Secure defaults**: Passlib handles salt generation
 
-**Alternative considered:** bcrypt
-
 ---
 
 ### 2. JWT Token Security
@@ -535,9 +725,6 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 - No token revocation (until expiration)
 - No refresh tokens implemented
 - Token stored in localStorage (XSS vulnerable)
-
-**Improvementes to make:**
-- Implement refresh tokens
 
 ---
 
@@ -570,7 +757,7 @@ class TaskCreate(BaseModel):
 
 **Decision:** Use SQLAlchemy's parameter binding (never string concatenation).
 
-**All queries use SQLAlchemy's safe query building.**
+All queries use SQLAlchemy's safe query building.
 
 ---
 
@@ -579,17 +766,12 @@ class TaskCreate(BaseModel):
 ```python
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Specific origin
+    allow_origins=["http://localhost"],  # Specific origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 ```
-
-**Production TODO:**
-- Use environment variable for allowed origins
-- Restrict to production domains
-- Consider more restrictive methods/headers
 
 ---
 
@@ -652,21 +834,11 @@ comments = relationship("Comment", back_populates="task", cascade="all, delete-o
 - Delete user → All their tasks, comments, notifications deleted
 - Delete task → All its comments and notifications deleted
 
-**Why:**
-- **Data Integrity**: No orphaned records
-- **User Privacy**: Complete data removal on user deletion
-- **Simplicity**: Don't need manual cleanup code
-
 ---
 
 ### 3. Eager Loading
 
 **Decision:** Use `joinedload` to prevent N+1 query problems.
-
-**Applied in:**
-- Task queries (load owner relationship)
-- Comment queries (load author relationship)
-- Notification queries (load task and user relationships)
 
 ---
 
@@ -679,10 +851,63 @@ email = Column(String, unique=True, index=True)  # For login queries
 id = Column(Integer, primary_key=True, index=True)  # Automatic
 ```
 
-**Missing indexes**:
+**Missing indexes** (for future optimization):
 - `task.owner_id` (for user's tasks queries)
 - `task.status` (for status filtering)
 - `notification.user_id, is_read` (composite for unread notifications)
+
+---
+
+## Logging System
+
+The project implements dual logging for both backend and frontend.
+
+### Backend (Python)
+
+- **Location**: `src/core/logger.py`
+- **Output**: Console + rotating files (`logs/app.log`, `logs/error.log`)
+- **Levels**: DEBUG, INFO, WARNING, ERROR
+- **Format**: `[timestamp] - [logger_name] - [level] - [message]`
+
+**Usage:**
+```python
+from src.core.logger import get_logger
+logger = get_logger(__name__)
+logger.info("User logged in", extra={"user_id": 1})
+```
+
+### Frontend (TypeScript)
+
+- **Location**: `frontend/src/utils/logger.ts`
+- **Output**: Browser console
+- **Features**: Timestamps, structured logs, API request/response tracking
+
+**Usage:**
+```typescript
+import logger from './utils/logger';
+logger.info('User logged in', { userId: 1 });
+```
+
+### Log Files
+
+When running locally:
+```bash
+# Backend logs
+docker-compose logs api
+
+# View log files (if running locally)
+cat logs/app.log
+cat logs/error.log
+```
+
+### Quick Reference
+
+| Environment | Log Level | Output |
+|-------------|-----------|--------|
+| Docker | INFO | `docker-compose logs api` |
+| Local (DEBUG=True) | DEBUG | Console + `logs/` files |
+
+For detailed documentation, see [LOGGING.md](LOGGING.md).
 
 ---
 
@@ -774,7 +999,7 @@ id = Column(Integer, primary_key=True, index=True)  # Automatic
 ### 2. Testing
 
 **Actions:**
-- ✅ 95 integration tests
+- ✅ 98 integration tests
 - ✅ Test fixtures with different scopes
 - ✅ Factory and Builder pattern for test data
 - ✅ Test database isolation
@@ -790,7 +1015,7 @@ id = Column(Integer, primary_key=True, index=True)  # Automatic
 ### 3. Developer Experience
 
 **Actions:**
-- ✅ Automated startup scripts (start.ps1, start.sh)
+- ✅ Docker Compose for one-command setup
 - ✅ Comprehensive README
 - ✅ QUICKSTART.md guide
 - ✅ Logging for debugging
@@ -821,25 +1046,9 @@ id = Column(Integer, primary_key=True, index=True)  # Automatic
 
 ## What I Would Improve With More Time
 
-#### 1. Refresh Token Implementation
+### 1. Refresh Token Implementation
 
 **Current:** Access tokens expire, but no refresh mechanism.
-
-**Improvement:**
-```python
-# Add refresh token to response
-{
-  "access_token": "...",
-  "refresh_token": "...",
-  "token_type": "bearer"
-}
-
-# New endpoint
-@router.post("/refresh")
-async def refresh_access_token(refresh_token: str):
-    # Validate refresh token
-    # Issue new access token
-```
 
 **Benefits:**
 - Better UX (no forced re-login)
@@ -848,7 +1057,7 @@ async def refresh_access_token(refresh_token: str):
 
 ---
 
-#### 2. WebSocket for Real-Time Notifications
+### 2. WebSocket for Real-Time Notifications
 
 **Current:** Frontend polls every 30 seconds for notifications.
 
@@ -859,7 +1068,7 @@ async def refresh_access_token(refresh_token: str):
 
 ---
 
-#### 3. Caching Layer (Redis)
+### 3. Caching Layer (Redis)
 
 **Current:** Every request hits the database.
 
@@ -870,7 +1079,7 @@ async def refresh_access_token(refresh_token: str):
 
 ---
 
-#### 4. Search and Filtering
+### 4. Search and Filtering
 
 **Current:** Can only filter tasks by status.
 
@@ -880,25 +1089,19 @@ async def refresh_access_token(refresh_token: str):
 
 ---
 
-#### 5. Email Notifications
+### 5. Email Notifications
 
 **Current:** Only in-app notifications.
 
 ---
 
-#### 6. Frontend Unit Tests and e2e Tests
+### 6. Frontend Unit Tests and E2E Tests
 
 **Current:** No frontend unit tests or e2e.
 
 ---
 
-#### 7. Responsive UI
-
-**Feature**: Mobile-friendly React interface
-
----
-
-#### 8. Monitoring and Observability
+### 7. Monitoring and Observability
 
 **Current:** Only logs to files.
 
@@ -910,181 +1113,37 @@ async def refresh_access_token(refresh_token: str):
 
 ---
 
-#### 9. Task Templates
+## Areas for Improvement
 
-**Feature:** Save tasks as templates for reuse.
+### Performance
+- [ ] Implement Redis caching for frequently accessed data
+- [ ] Add database query optimization and indexing strategy
+- [ ] Implement WebSocket for real-time notifications instead of polling
 
----
+### Features
+- [ ] Add file attachments to tasks
+- [ ] Implement task templates
+- [ ] Add projects to group tasks
+- [ ] Add task labels/tags for better organization
+- [ ] Implement task dependencies and subtasks
+- [ ] Add activity/audit log for task changes
+- [ ] Implement email notifications
 
-#### 10. Task Dependencies
+### Code Quality
+- [ ] Add frontend unit tests (Vitest/Jest)
+- [ ] Add E2E tests (Playwright/Cypress)
 
-**Feature:** Tasks can depend on other tasks.
-
----
-
-#### 11. Audit Log
-
-**Feature:** Track all changes to tasks.
-
----
-
-## How to Run and Test
-
-### Quick Start
-
-For the fastest way to get the application running, see **[QUICKSTART.md](QUICKSTART.md)**.
-
-The quick start guide provides:
-- ✅ One-command automated setup for Windows, Linux, and macOS
-- ✅ Automated dependency installation
-- ✅ Database initialization
-- ✅ Service startup (database, backend, frontend)
-- ✅ Troubleshooting common issues
-
-**Windows:**
-```powershell
-.\start.ps1
-```
-
-**Linux/macOS:**
-```bash
-./start.sh
-```
+### User Experience
+- [ ] Implement drag-and-drop for task reordering
+- [ ] Add bulk operations (bulk delete, bulk status update)
+- [ ] Implement undo/redo functionality
 
 ---
 
-### Detailed Setup Instructions
+## Known Issues
 
-For complete installation instructions, manual setup, and configuration options, see **[README.md](README.md#installation)**.
-
-The README provides:
-- Prerequisites and system requirements
-- Step-by-step installation guide
-- Environment configuration
-- Database setup and migrations
-- Running services individually or with Docker Compose
-
----
-
-### Running Tests
-
-#### Backend Tests
-
-```bash
-# Run all tests
-uv run --extra dev pytest
-
-# Run with coverage report
-uv run --extra dev pytest --cov=src --cov-report=html --cov-report=term
-
-# Run specific test file
-uv run --extra dev pytest tests/test_tasks.py
-
-# Run specific test class
-uv run --extra dev pytest tests/test_tasks.py::TestCreateTask
-
-# View HTML coverage report
-start htmlcov/index.html  # Windows
-open htmlcov/index.html   # macOS
-```
-
-**Test Organization:**
-- **Integration tests**: 98 test cases covering full request → database → response flow
-- **Test fixtures**: Different scopes (session, function) for optimal performance
-- **Factory pattern**: Reusable test data creation
-- **Database isolation**: Each test gets a clean database state
-
-**Coverage:** Tests cover authentication, RBAC, task CRUD, comments, notifications, and user management.
-
-#### Frontend Tests
-
-```bash
-cd frontend
-npm run test
-```
-
-**Note:** Frontend tests not yet implemented. See [improvement section](#6-frontend-unit-tests-and-e2e-tests).
-
----
-
-### Accessing the Application
-
-Once running, access the application at:
-
-> **Note:** The app is not deployed at the moment and is currently offline. Use the local URLs below after starting the services.
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Frontend** | http://localhost:5173 | React UI |
-| **Backend API** | http://localhost:8000 | REST API |
-| **API Docs (Swagger)** | http://localhost:8000/docs | Interactive API documentation |
-| **API Docs (ReDoc)** | http://localhost:8000/redoc | Alternative API documentation |
-| **Database** | localhost:5432 | PostgreSQL |
-
-**Default Credentials:**
-- Owner: `admin@admin.com` / `admin123`
-- Member: `john.doe@example.com` / `password123`
-
----
-
-### Project Structure
-
-For a complete overview of the project structure, see **[README.md](README.md#project-structure)**.
-
-**Key directories:**
-```
-task-manager-api/
-├── src/                    # Backend source (layered architecture)
-│   ├── api/v1/endpoints/  # API route handlers
-│   ├── core/              # Config, security, permissions, errors
-│   ├── models/            # SQLAlchemy ORM models
-│   ├── repositories/      # Data access layer
-│   ├── schemas/           # Pydantic validation schemas
-│   └── services/          # Business logic layer
-├── frontend/src/          # Frontend source
-│   ├── components/        # React components
-│   ├── services/          # API service layer
-│   └── types/             # TypeScript types
-├── tests/                 # Backend test suite
-└── alembic/              # Database migrations
-```
-
----
-
-### Debugging Tips
-
-**Backend:**
-1. Enable SQL query logging by setting `echo=True` in [src/db/session.py](src/db/session.py)
-2. Check application logs in `logs/app.log` and `logs/error.log`
-3. Use `import pdb; pdb.set_trace()` for interactive debugging
-
-**Frontend:**
-1. Open browser DevTools (F12)
-2. Check Console for errors and Network tab for API calls
-3. Use React DevTools extension for component inspection
-
-**Database:**
-```bash
-# Connect to PostgreSQL
-docker exec -it taskmanager_db psql -U taskuser -d taskmanager
-
-# List tables
-\dt
-
-# Query data
-SELECT * FROM users;
-SELECT * FROM tasks;
-```
-
----
-
-### Common Issues
-
-See **[QUICKSTART.md](QUICKSTART.md#solución-de-problemas)** for detailed troubleshooting:
-- Docker not running
-- Ports already in use
-- Database connection errors
-- Dependency installation issues
+- [ ] **Token Expiration Handling**: Frontend doesn't handle token expiration gracefully - users aren't notified when their session expires
+- [ ] **Notification Polling Performance**: Current polling interval may cause unnecessary API calls - consider implementing WebSocket or Server-Sent Events
 
 ---
 
@@ -1109,3 +1168,14 @@ This project demonstrates:
 - Frontend testing
 - Performance optimization (caching, indexing)
 - Real-time features (WebSockets)
+
+---
+
+## Additional Resources
+
+- [SCRIPTS.md](SCRIPTS.md) - Scripts for development and testing (docker-compose, setup-dev.sh, run-tests.sh)
+- [LOGGING.md](LOGGING.md) - Detailed logging system documentation
+- [tests/README.md](tests/README.md) - Complete testing guide with setup instructions, test patterns, and troubleshooting
+- [initial_README.md](initial_README.md) - Original project requirements and specifications
+- [Backend API Docs](http://localhost:8000/docs) - Swagger UI (when running)
+- [Backend API Docs](http://localhost:8000/redoc) - ReDoc (when running)

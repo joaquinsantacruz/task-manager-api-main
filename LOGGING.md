@@ -2,6 +2,19 @@
 
 This document describes the logging system implemented in the Task Manager API project.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Backend Logging (Python)](#backend-logging-python)
+- [Frontend Logging (TypeScript)](#frontend-logging-typescript)
+- [Log Output Examples](#log-output-examples)
+- [Configuration](#configuration)
+- [Best Practices](#best-practices)
+- [Maintenance](#maintenance)
+- [Troubleshooting](#troubleshooting)
+
+---
+
 ## Overview
 
 The project uses a comprehensive logging system for both backend (Python/FastAPI) and frontend (TypeScript/React) to help with debugging, monitoring, and auditing.

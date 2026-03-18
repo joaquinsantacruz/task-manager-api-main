@@ -2,31 +2,86 @@
 
 This directory contains integration tests for the Task Manager API using pytest and a real PostgreSQL test database.
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Key Components](#key-components)
+- [Setup](#setup)
+- [Running Tests](#running-tests)
+- [Test Patterns](#test-patterns)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## Quick Start
+
+### One-Command Setup & Test
+
+**Linux/macOS (Bash):**
+```bash
+# Full setup + run tests
+./setup-dev.sh           # Setup local environment
+./run-tests.sh setup     # Setup test database
+./run-tests.sh test      # Run all tests
+
+# Or all at once (after setup-dev.sh)
+./run-tests.sh setup-test
+```
+
+**Windows (PowerShell):**
+```powershell
+# Note: Windows scripts require manual setup for now
+# Use Docker for testing: docker-compose up -d
+```
+
+This will:
+1. Create the test database (`taskmanager_test`)
+2. Run all tests with coverage
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `setup` | Create the test database only |
+| `setup-test` | Setup database and run all tests |
+| `test` | Run tests only (assumes database exists) |
+
+---
+
 ## Architecture
 
 The test suite follows SOLID principles and clean architecture:
 
-### Structure
 ```
 tests/
-├── conftest.py           # Pytest fixtures and configuration
-├── test_config.py        # Test-specific settings
-├── factories.py          # Factory classes for creating test data
-├── test_tasks.py         # Integration tests for task endpoints
-├── test_users.py         # Integration tests for user endpoints
-├── test_notifications.py # Integration tests for notification endpoints
-└── README.md            # This file
+├── __init__.py              # Package marker
+├── conftest.py              # Pytest fixtures and configuration
+├── test_config.py           # Test-specific settings
+├── setup_test_db.py         # Test database setup utilities
+├── factories.py             # Factory classes for creating test data
+├── test_tasks.py            # Integration tests for task endpoints
+├── test_users.py            # Integration tests for user endpoints
+├── test_notifications.py    # Integration tests for notification endpoints
+├── test_comments.py         # Integration tests for comment endpoints
+└── test_health.py          # Health check tests
 ```
 
-### Key Components
+---
 
-#### 1. **Test Configuration** (`test_config.py`)
+## Key Components
+
+### 1. Test Configuration (`test_config.py`)
+
 - Manages test-specific settings
 - Uses a separate test database to ensure isolation
 - Can be configured via `.env.test` file
 
-#### 2. **Fixtures** (`conftest.py`)
+### 2. Fixtures (`conftest.py`)
+
 Provides reusable test components following dependency injection:
+
 - `test_engine`: Database engine for the entire test session
 - `test_db_setup`: Creates/drops database schema per test
 - `db_session`: Database session for each test (ensures isolation)
@@ -35,18 +90,19 @@ Provides reusable test components following dependency injection:
 - `owner_token` / `member_token`: JWT tokens for authentication
 - `auth_headers_owner` / `auth_headers_member`: Ready-to-use auth headers
 
-#### 3. **Factories** (`factories.py`)
+### 3. Factories (`factories.py`)
+
 Factory classes for creating test data:
+
 - `TaskFactory`: Create tasks with various configurations
 - `CommentFactory`: Create comments on tasks
 - `UserFactory`: Create users with different roles and states
 - `NotificationFactory`: Create notifications with different types and states
 - `TestDataBuilder`: Build complex test scenarios with multiple entities
 
-#### 4. **Test Suites**
+### 4. Test Suites
 
 **Task Tests** (`test_tasks.py`):
-Comprehensive integration tests organized by endpoint:
 - `TestListTasks`: GET /api/v1/tasks
 - `TestCreateTask`: POST /api/v1/tasks
 - `TestGetTask`: GET /api/v1/tasks/{id}
@@ -55,14 +111,12 @@ Comprehensive integration tests organized by endpoint:
 - `TestComplexTaskScenarios`: Multi-step workflows
 
 **User Tests** (`test_users.py`):
-Integration tests for user management endpoints:
 - `TestGetCurrentUser`: GET /api/v1/users/me
 - `TestListUsers`: GET /api/v1/users/ (role-based access)
 - `TestCreateUser`: POST /api/v1/users/ (owner-only)
 - `TestUserIntegrationScenarios`: Complete user lifecycle flows
 
 **Notification Tests** (`test_notifications.py`):
-Integration tests for notification endpoints:
 - `TestGetNotifications`: GET /api/v1/notifications/ (filtering, pagination)
 - `TestGetUnreadCount`: GET /api/v1/notifications/unread-count
 - `TestMarkNotificationAsRead`: PUT /api/v1/notifications/{id}/read
@@ -71,22 +125,71 @@ Integration tests for notification endpoints:
 - `TestNotificationIntegrationScenarios`: Complex notification workflows
 
 **Comment Tests** (`test_comments.py`):
-Integration tests for comment endpoints:
-- `TestGetTaskComments`: GET /api/v1/tasks/{task_id}/comments (owner and OWNER role access)
-- `TestCreateComment`: POST /api/v1/tasks/{task_id}/comments (owner and OWNER role access)
-- `TestUpdateComment`: PUT /api/v1/tasks/comments/{comment_id} (author-only)
-- `TestDeleteComment`: DELETE /api/v1/tasks/comments/{comment_id} (author and OWNER role)
-- `TestCommentIntegrationScenarios`: Complex comment workflows and moderation
+- `TestGetTaskComments`: GET /api/v1/tasks/{task_id}/comments
+- `TestCreateComment`: POST /api/v1/tasks/{task_id}/comments
+- `TestUpdateComment`: PUT /api/v1/comments/{comment_id}
+- `TestDeleteComment`: DELETE /api/v1/comments/{comment_id}
+- `TestCommentIntegrationScenarios`: Complex comment workflows
+
+**Health Tests** (`test_health.py`):
+- `TestHealthCheck`: API health check endpoint tests
+
+---
 
 ## Setup
 
-### 1. Install Dependencies
+### Using Scripts (Recommended)
+
+The easiest way to set up and run tests is using the provided scripts:
+
+**Windows (PowerShell):**
+```powershell
+# Setup test database
+.\run-tests.ps1 setup
+
+# Setup and run tests
+.\run-tests.ps1 setup-test
+
+# Run tests only
+.\run-tests.ps1 test
+```
+
+**Linux/macOS (Bash):**
 ```bash
-# Install test dependencies
+# Setup test database
+./run-tests.sh setup
+
+# Setup and run tests
+./run-tests.sh setup-test
+
+# Run tests only
+./run-tests.sh test
+```
+
+### Manual Setup
+
+#### 1. Install Dependencies
+
+```bash
+# Using uv (recommended)
+uv sync --extra dev
+
+# Or using pip
 uv pip install -e ".[dev]"
 ```
 
 ### 2. Create Test Database
+
+The test database must be created before running tests.
+
+**If using Docker Compose:**
+```bash
+# Create test database
+docker exec -it taskmanager_db psql -U taskuser -d postgres -c "CREATE DATABASE taskmanager_test;"
+docker exec -it taskmanager_db psql -U taskuser -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE taskmanager_test TO taskuser;"
+```
+
+**Or connect directly:**
 ```bash
 # Connect to PostgreSQL
 psql -U postgres
@@ -94,58 +197,97 @@ psql -U postgres
 # Create test database
 CREATE DATABASE taskmanager_test;
 
-# Grant permissions to your user
-GRANT ALL PRIVILEGES ON DATABASE taskmanager_test TO taskmanager;
+# Grant permissions
+GRANT ALL PRIVILEGES ON DATABASE taskmanager_test TO taskuser;
+\q
 ```
 
 ### 3. Configure Test Environment (Optional)
+
 Create a `.env.test` file to override default test settings:
+
 ```env
-TEST_DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/taskmanager_test
+TEST_DATABASE_URL=postgresql+asyncpg://taskuser:taskpass@localhost:5432/taskmanager_test
 SECRET_KEY=your-test-secret-key
 ```
 
+---
+
 ## Running Tests
 
-### Run All Tests
+### Quick Start
+
 ```bash
-pytest
+# Run all tests
+uv run pytest
+
+# Run with coverage
+uv run pytest --cov=src --cov-report=html --cov-report=term
 ```
 
-### Run with Verbose Output
+### Common Commands
+
 ```bash
-pytest -v
+# Run with verbose output
+uv run pytest -v
+
+# Run specific test file
+uv run pytest tests/test_tasks.py
+
+# Run specific test class
+uv run pytest tests/test_tasks.py::TestCreateTask
+
+# Run specific test
+uv run pytest tests/test_tasks.py::TestCreateTask::test_create_task_success
+
+# Run tests matching a pattern
+uv run pytest -k "task"
+
+# Run tests matching multiple patterns
+uv run pytest -k "task and owner"
+
+# Exclude tests matching a pattern
+uv run pytest -k "not slow"
+
+# Run with print statements
+uv run pytest -s
+
+# Run with full traceback
+uv run pytest --tb=long
+
+# Run tests in parallel (requires pytest-xdist)
+uv run pytest -n auto
 ```
 
-### Run Specific Test File
+### View Coverage Report
+
 ```bash
-pytest tests/test_tasks.py
+# Open in browser (macOS)
+open htmlcov/index.html
+
+# Or (Windows)
+start htmlcov/index.html
+
+# Or generate terminal report
+uv run pytest --cov=src --cov-report=term-missing
 ```
 
-### Run Specific Test Class
+### Frontend Tests
+
 ```bash
-pytest tests/test_tasks.py::TestCreateTask
+cd frontend
+npm install
+npm run test
 ```
 
-### Run Specific Test
-```bash
-pytest tests/test_tasks.py::TestCreateTask::test_create_task_success
-```
-
-### Run with Coverage Report
-```bash
-pytest --cov=src --cov-report=html
-```
-
-### Run Tests in Parallel (requires pytest-xdist)
-```bash
-pytest -n auto
-```
+---
 
 ## Test Patterns
 
 ### AAA Pattern
+
 All tests follow the Arrange-Act-Assert pattern:
+
 ```python
 async def test_example(client, auth_headers):
     # Arrange: Set up test data
@@ -159,6 +301,7 @@ async def test_example(client, auth_headers):
 ```
 
 ### Using Factories
+
 ```python
 # Create a task using TaskFactory
 async def test_with_task_factory(db_session, test_user_owner):
@@ -187,6 +330,7 @@ async def test_with_user_factory(db_session):
 ```
 
 ### Building Complex Scenarios
+
 ```python
 async def test_complex_scenario(db_session, test_user_owner):
     # Use TestDataBuilder for complex setups
@@ -200,6 +344,8 @@ async def test_complex_scenario(db_session, test_user_owner):
     
     assert len(data["tasks"]) == 5
 ```
+
+---
 
 ## Best Practices
 
@@ -227,25 +373,56 @@ async def test_complex_scenario(db_session, test_user_owner):
 - Function-scoped fixtures for isolation (database session)
 - Use factories to reduce boilerplate
 
+---
+
 ## Troubleshooting
 
 ### Database Connection Issues
-- Ensure PostgreSQL is running: `docker-compose up -d db`
-- Verify database exists: `psql -U postgres -c "\l"`
-- Check connection string in test_config.py
+
+```bash
+# Ensure PostgreSQL is running
+docker-compose up -d db
+
+# Verify database exists
+docker exec -it taskmanager_db psql -U taskuser -d postgres -c "\l"
+```
 
 ### Test Failures
-- Run with `-v` for verbose output
-- Use `-s` to see print statements
-- Check test database state: Database is reset between tests
+
+```bash
+# Run with verbose output
+uv run pytest -v
+
+# Run with print statements
+uv run pytest -s
+
+# Run with full traceback
+uv run pytest --tb=long
+
+# Run until first failure
+uv run pytest -x
+```
 
 ### Import Errors
-- Ensure you're running from project root
-- Install in development mode: `uv pip install -e ".[dev]"`
 
-## Contributing
+```bash
+# Ensure you're running from project root
+cd /path/to/task-manager-api-main
+
+# Reinstall dependencies
+uv sync --extra dev
+```
+
+### Database Already Exists
+
+If you get an error that the database already exists when running tests, this is expected if the database was previously created. Tests will reuse the existing test database.
+
+---
+
+## Updating
 
 When adding new tests:
+
 1. Follow the existing structure and patterns
 2. Use appropriate fixtures instead of duplicating setup
 3. Add docstrings explaining what the test verifies
@@ -255,6 +432,7 @@ When adding new tests:
 ## Next Steps
 
 Consider adding tests for:
+
 - Task assignment and ownership transfer
 - Permission edge cases
 - Performance/load testing
